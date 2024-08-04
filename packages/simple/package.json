@@ -1,0 +1,16 @@
+{
+  "name": "markdown",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "nanoid": "^5.0.7",
+    "@nnnb/markdown": "workspace:^"
+
+  },
+  "devDependencies": {
+  }
+}

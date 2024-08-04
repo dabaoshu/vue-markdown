@@ -1,0 +1,33 @@
+{
+  "name": "@nnnb/markdown",
+  "version": "1.0.0",
+  "module": "./dist/es/index.mjs",
+  "main": "./dist/lib/index.js",
+  "scripts": {
+    "build": "vite build",
+    "build:style": "esno ./scripts/style"
+  },
+  "dependencies": {
+    "develop": "^1.0.0",
+    "devlop": "^1.1.0",
+    "esno": "^4.7.0",
+    "hast-util-to-html": "^9.0.1",
+    "hast-util-to-jsx-runtime": "^2.3.0",
+    "highlight.js": "^11.10.0",
+    "html-url-attributes": "^3.0.0",
+    "refractor": "^4.8.1",
+    "rehype-stringify": "^10.0.0",
+    "rehype-vue": "^1.0.5",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.0",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.0.0",
+    "vfile": "^6.0.2",
+    "vue-jsx-runtime": "^0.1.0"
+  },
+  "devDependencies": {
+    "cpy": "^11.1.0",
+    "fast-glob": "^3.3.2",
+    "vite-plugin-dts": "1.4.1"
+  }
+}

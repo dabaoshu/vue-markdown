@@ -1,6 +1,6 @@
-import { HighlighterVue } from './components/highlight';
+import { CodeHighLight } from '@nnnb/markdown';
 // import 'highlight.js/styles/atom-one-dark.css';
-import './components/styles/codeLight.scss';
+// import './styles/codeLight.scss';
 import styles from './index.module.scss';
 import { defineComponent } from 'vue';
 // console.log(dracula);
@@ -43,10 +43,10 @@ export const CodeBlock = defineComponent({
             </div>
           </div>
 
-          <HighlighterVue
+          <CodeHighLight
             language={language}
             code={children}
-            autodetect={false}
+            autoMatch={false}
           />
         </div>
       ) : (

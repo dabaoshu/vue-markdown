@@ -1,15 +1,12 @@
 {
   "compilerOptions": {
+    "rootDir": "./",
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2016",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     "jsxImportSource": "vue",
     "jsxFactory": "h",
@@ -28,16 +25,10 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "baseUrl": "./",
+    "baseUrl": "./"
   },
-  "include": [
-    "simple/**/*.ts",
-    "simple/**/*.tsx",
-    "simple/**/*.vue",
-    "simple/**/*.d.ts",
-    "packages/**/*.ts",
-    "packages/**/*.tsx",
-    "packages/**/*.vue",
-    "packages/**/*.d.ts"
-  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+  ]
 }

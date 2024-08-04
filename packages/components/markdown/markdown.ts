@@ -7,19 +7,38 @@ import remarkRehype, { Options as RemarkRehypeOptions } from 'remark-rehype';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { VFile } from 'vfile';
-
 const emptyPlugins = [];
 const emptyRemarkRehypeOptions: RemarkRehypeOptions = {
   allowDangerousHtml: true
 };
 const safeProtocol = /^(https?|ircs?|mailto|xmpp)$/i;
 
-export function Markdown(options) {
+// 定义一些类型以增强代码的可读性和类型检查
+export interface MarkdownOptions {
+  allowedElements?: string[];
+  allowElement?: (node: any, index: number, parent: any) => boolean;
+  /** string to code */
+  children: string;
+  /**local class */
+  className?: string;
+  /** 需要具体化组件的类型 */
+  components?: Record<string, any>;
+  disallowedElements?: string[];
+  rehypePlugins?: any[];
+  remarkPlugins?: any[];
+  remarkRehypeOptions?: object; // 需要具体化选项的类型
+  skipHtml?: boolean;
+  unwrapDisallowed?: boolean;
+  urlTransform?: (url: string, attribute: string, node: any) => string;
+}
+export function Markdown(options: MarkdownOptions) {
   const allowedElements = options.allowedElements;
   const allowElement = options.allowElement;
   const children = options.children || '';
   const className = options.className;
   const components = options.components;
+  console.log(555);
+  
   const disallowedElements = options.disallowedElements;
   const rehypePlugins = options.rehypePlugins || emptyPlugins;
   const remarkPlugins = options.remarkPlugins || emptyPlugins;
@@ -43,8 +62,8 @@ export function Markdown(options) {
   } else {
     unreachable(
       'Unexpected value `' +
-      children +
-      '` for `children` prop, expected `string`'
+        children +
+        '` for `children` prop, expected `string`'
     );
   }
 
@@ -55,7 +74,6 @@ export function Markdown(options) {
   }
 
   const mdastTree = processor.parse(file);
-  /** @type {Nodes} */
   let hastTree = processor.runSync(mdastTree, file);
 
   // Wrap in `div` if there’s a class name.
@@ -64,12 +82,8 @@ export function Markdown(options) {
       type: 'element',
       tagName: 'div',
       properties: { className },
-      // Assume no doctypes.
-      children:
-        /** @type {Array<ElementContent>} */ hastTree.type === 'root'
-          ? hastTree.children
-          : [hastTree]
-    };
+      children: hastTree.type === 'root' ? hastTree.children : [hastTree]
+    } as any;
   }
 
   visit(hastTree, transform);
@@ -85,7 +99,6 @@ export function Markdown(options) {
     elementAttributeNameCase: 'html'
   });
 
-  /** @type {BuildVisitor<Root>} */
   function transform(node, index, parent) {
     if (node.type === 'raw' && parent && typeof index === 'number') {
       if (skipHtml) {
@@ -98,13 +111,11 @@ export function Markdown(options) {
     }
 
     if (node.type === 'element') {
-      /** @type {string} */
       let key;
-
       for (key in urlAttributes) {
         if (
-          Object.hasOwn(urlAttributes, key) &&
-          Object.hasOwn(node.properties, key)
+          urlAttributes.hasOwnProperty(key) &&
+          node.properties.hasOwnProperty(key)
         ) {
           const value = node.properties[key];
           const test = urlAttributes[key];
@@ -119,8 +130,8 @@ export function Markdown(options) {
       let remove = allowedElements
         ? !allowedElements.includes(node.tagName)
         : disallowedElements
-          ? disallowedElements.includes(node.tagName)
-          : false;
+        ? disallowedElements.includes(node.tagName)
+        : false;
       if (!remove && allowElement && typeof index === 'number') {
         remove = !allowElement(node, index, parent);
       }
