@@ -37,23 +37,27 @@ export function Markdown(options: MarkdownOptions) {
   const children = options.children || '';
   const className = options.className;
   const components = options.components;
-  console.log(555);
-  
+  // console.log(555);
+
   const disallowedElements = options.disallowedElements;
   const rehypePlugins = options.rehypePlugins || emptyPlugins;
   const remarkPlugins = options.remarkPlugins || emptyPlugins;
   const remarkRehypeOptions = options.remarkRehypeOptions
     ? { ...options.remarkRehypeOptions, ...emptyRemarkRehypeOptions }
     : emptyRemarkRehypeOptions;
+
   const skipHtml = options.skipHtml;
   const unwrapDisallowed = options.unwrapDisallowed;
   const urlTransform = options.urlTransform || defaultUrlTransform;
+
+  console.log('remarkPlugins', remarkPlugins);
+  console.log('rehypePlugins', rehypePlugins);
 
   const processor = unified()
     .use(remarkParse)
     .use(remarkPlugins)
     .use(remarkRehype, remarkRehypeOptions)
-    .use(rehypePlugins);
+    .use(rehypePlugins)
 
   const file = new VFile();
 
@@ -62,8 +66,8 @@ export function Markdown(options: MarkdownOptions) {
   } else {
     unreachable(
       'Unexpected value `' +
-        children +
-        '` for `children` prop, expected `string`'
+      children +
+      '` for `children` prop, expected `string`'
     );
   }
 
@@ -72,6 +76,7 @@ export function Markdown(options: MarkdownOptions) {
       'Unexpected combined `allowedElements` and `disallowedElements`, expected one or the other'
     );
   }
+
 
   const mdastTree = processor.parse(file);
   let hastTree = processor.runSync(mdastTree, file);
@@ -130,8 +135,8 @@ export function Markdown(options: MarkdownOptions) {
       let remove = allowedElements
         ? !allowedElements.includes(node.tagName)
         : disallowedElements
-        ? disallowedElements.includes(node.tagName)
-        : false;
+          ? disallowedElements.includes(node.tagName)
+          : false;
       if (!remove && allowElement && typeof index === 'number') {
         remove = !allowElement(node, index, parent);
       }

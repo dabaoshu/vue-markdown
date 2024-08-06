@@ -31,10 +31,6 @@
     "baseUrl": "./",
   },
   "include": [
-    "simple/**/*.ts",
-    "simple/**/*.tsx",
-    "simple/**/*.vue",
-    "simple/**/*.d.ts",
     "packages/**/*.ts",
     "packages/**/*.tsx",
     "packages/**/*.vue",

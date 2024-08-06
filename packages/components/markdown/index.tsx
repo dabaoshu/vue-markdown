@@ -1,6 +1,11 @@
 import { PropType, computed, defineComponent } from 'vue';
 import { Markdown as MarkdownRender, MarkdownOptions } from './markdown';
 import { unreachable } from 'devlop';
+import RemarkMath from 'remark-math';
+import RemarkToc from 'remark-toc';
+import RemarkBreaks from 'remark-breaks';
+import RehypeKatex from 'rehype-katex';
+import RemarkGfm from 'remark-gfm';
 export { MarkdownRender };
 export type { MarkdownOptions } from './markdown';
 export type MarkdownProps = Omit<MarkdownOptions, 'children'>;
@@ -62,7 +67,8 @@ export const Markdown = defineComponent({
     });
     const children = computed(() => {
       const { default: defaultSlot } = slots;
-      const children = defaultSlot && (defaultSlot?.()[0]?.children as string);
+      const children =
+        (defaultSlot && (defaultSlot?.()[0]?.children as string)) || '';
       if (typeof children !== 'string') {
         unreachable(
           'Unexpected value `' +
@@ -72,13 +78,24 @@ export const Markdown = defineComponent({
       }
       return props.source || children;
     });
-    return () => (
-      <MarkdownRender
-        className={attrs.class as string}
-        components={components.value}
-        children={children.value}
-      />
-    );
+    const { components: props_components, source, ..._props } = props;
+
+    return () => {
+      console.log(_props);
+      console.log(_props.remarkPlugins);
+      
+      return (
+        <MarkdownRender
+          className={attrs.class as string}
+          components={components.value}
+          children={children.value}
+          // remarkPlugins={props.remarkPlugins}
+          // rehypePlugins={props.rehypePlugins}
+          remarkPlugins={[RemarkGfm, RemarkBreaks, RemarkMath, RemarkToc]}
+          rehypePlugins={[RehypeKatex]}
+          // {..._props}
+        />
+      );
+    };
   }
 });
-

@@ -1,6 +1,8 @@
 {
   "name": "@nnnb/markdown",
   "version": "1.0.0",
+  "module": "./dist/es/index.mjs",
+  "main": "./dist/lib/index.js",
   "scripts": {
     "build": "vite build",
     "build:style": "esno ./scripts/style"
@@ -14,12 +16,13 @@
     "highlight.js": "^11.10.0",
     "html-url-attributes": "^3.0.0",
     "refractor": "^4.8.1",
+    "rehype-stringify": "^10.0.0",
     "rehype-vue": "^1.0.5",
     "remark-parse": "^11.0.0",
-    "remark-rehype": "^11.0.0",
+    "remark-rehype": "^11.1.0",
     "unified": "^11.0.5",
     "unist-util-visit": "^5.0.0",
-    "vfile": "^6.0.0",
+    "vfile": "^6.0.2",
     "vue-jsx-runtime": "^0.1.0"
   },
   "devDependencies": {

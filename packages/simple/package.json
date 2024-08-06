@@ -4,12 +4,12 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite"
+    "dev": "vite",
+    "build":"vite build"
   },
   "dependencies": {
     "nanoid": "^5.0.7",
     "@nnnb/markdown": "workspace:^"
-
   },
   "devDependencies": {
   }

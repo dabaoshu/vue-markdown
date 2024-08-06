@@ -2,16 +2,11 @@ import { defineComponent, onMounted } from 'vue';
 // import styles from './styles/markdown.module.scss';
 import { CodeBlock } from './codeBlock';
 import { Markdown } from '@nnnb/markdown';
-const MyP = (pProps, { slots }) => (
-  <p {...pProps} dir='auto'>
-    {slots.default && slots.default()}
-  </p>
-);
-const MyP2 = (pProps) => (
-  <p {...pProps} dir='auto'>
-    MyP2MyP2MyP2
-  </p>
-);
+import RemarkMath from 'remark-math';
+import RemarkToc from 'remark-toc';
+import RemarkBreaks from 'remark-breaks';
+import RehypeKatex from 'rehype-katex';
+import RemarkGfm from 'remark-gfm';
 
 export default defineComponent({
   name: 'demo',
@@ -27,6 +22,9 @@ export default defineComponent({
     });
     return () => (
       <Markdown
+        // remarkPlugins={[RemarkMath]}
+        remarkPlugins={[RemarkGfm, RemarkBreaks, RemarkMath, RemarkToc]}
+        rehypePlugins={[RehypeKatex]}
         // class={styles.markdown}
         components={{
           pre: (pProps, { slots }) => (
@@ -34,16 +32,11 @@ export default defineComponent({
               {slots.default && slots.default()}
             </div>
           ),
-          p: MyP,
+          // p: MyP,
           code: CodeBlock
         }}
         source={props.source}
-      >
-        {{
-          default: ' props.source',
-          p: MyP2
-        }}
-      </Markdown>
+      ></Markdown>
     );
   }
 });
