@@ -91,9 +91,9 @@ export const Markdown = defineComponent({
           children={children.value}
           // remarkPlugins={props.remarkPlugins}
           // rehypePlugins={props.rehypePlugins}
-          remarkPlugins={[RemarkGfm, RemarkBreaks, RemarkMath, RemarkToc]}
-          rehypePlugins={[RehypeKatex]}
-          // {..._props}
+          // remarkPlugins={[RemarkGfm, RemarkBreaks, RemarkMath, RemarkToc]}
+          // rehypePlugins={[RehypeKatex]}
+          {..._props}
         />
       );
     };

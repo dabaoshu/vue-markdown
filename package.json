@@ -9,11 +9,10 @@
   "dependencies": {
     "@vitejs/plugin-vue-jsx": "^4.0.0",
     "vue": "^3.4.29",
-    "rehype-katex": "^6.0.2",
-    "remark-breaks": "^3.0.3",
-    "remark-gfm": "^3.0.1",
-    "remark-math": "^5.1.1",
-    "remark-toc": "^9.0.0"
+    "rehype-katex": "^7.0.0",
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.0",
+    "remark-math": "^6.0.0"
   },
   "workspaces":[
     "packages/*"

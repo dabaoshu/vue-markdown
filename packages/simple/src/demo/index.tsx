@@ -3,10 +3,10 @@ import { defineComponent, onMounted } from 'vue';
 import { CodeBlock } from './codeBlock';
 import { Markdown } from '@nnnb/markdown';
 import RemarkMath from 'remark-math';
-import RemarkToc from 'remark-toc';
 import RemarkBreaks from 'remark-breaks';
 import RehypeKatex from 'rehype-katex';
 import RemarkGfm from 'remark-gfm';
+import 'katex/dist/katex.min.css'
 
 export default defineComponent({
   name: 'demo',
@@ -23,7 +23,9 @@ export default defineComponent({
     return () => (
       <Markdown
         // remarkPlugins={[RemarkMath]}
-        remarkPlugins={[RemarkGfm, RemarkBreaks, RemarkMath, RemarkToc]}
+        // remarkPlugins={[RemarkGfm, RemarkBreaks, RemarkMath, RemarkToc]}
+        // rehypePlugins={[RehypeKatex]}
+        remarkPlugins={[RemarkMath, [RemarkGfm, { singleTilde: false }], RemarkBreaks]}
         rehypePlugins={[RehypeKatex]}
         // class={styles.markdown}
         components={{
