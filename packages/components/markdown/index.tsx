@@ -1,11 +1,6 @@
 import { PropType, computed, defineComponent } from 'vue';
 import { Markdown as MarkdownRender, MarkdownOptions } from './markdown';
 import { unreachable } from 'devlop';
-import RemarkMath from 'remark-math';
-import RemarkToc from 'remark-toc';
-import RemarkBreaks from 'remark-breaks';
-import RehypeKatex from 'rehype-katex';
-import RemarkGfm from 'remark-gfm';
 export { MarkdownRender };
 export type { MarkdownOptions } from './markdown';
 export type MarkdownProps = Omit<MarkdownOptions, 'children'>;
@@ -72,27 +67,21 @@ export const Markdown = defineComponent({
       if (typeof children !== 'string') {
         unreachable(
           'Unexpected value `' +
-            children +
-            '` for `children` prop, expected `string`'
+          children +
+          '` for `children` prop, expected `string`'
         );
       }
       return props.source || children;
     });
     const { components: props_components, source, ..._props } = props;
-
+    console.log("mk 源码");
+    
     return () => {
-      console.log(_props);
-      console.log(_props.remarkPlugins);
-      
       return (
         <MarkdownRender
           className={attrs.class as string}
           components={components.value}
           children={children.value}
-          // remarkPlugins={props.remarkPlugins}
-          // rehypePlugins={props.rehypePlugins}
-          // remarkPlugins={[RemarkGfm, RemarkBreaks, RemarkMath, RemarkToc]}
-          // rehypePlugins={[RehypeKatex]}
           {..._props}
         />
       );

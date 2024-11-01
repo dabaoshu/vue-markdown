@@ -31,13 +31,13 @@ export interface MarkdownOptions {
   unwrapDisallowed?: boolean;
   urlTransform?: (url: string, attribute: string, node: any) => string;
 }
+
 export function Markdown(options: MarkdownOptions) {
   const allowedElements = options.allowedElements;
   const allowElement = options.allowElement;
   const children = options.children || '';
   const className = options.className;
   const components = options.components;
-  // console.log(555);
 
   const disallowedElements = options.disallowedElements;
   const rehypePlugins = options.rehypePlugins || emptyPlugins;
@@ -49,9 +49,6 @@ export function Markdown(options: MarkdownOptions) {
   const skipHtml = options.skipHtml;
   const unwrapDisallowed = options.unwrapDisallowed;
   const urlTransform = options.urlTransform || defaultUrlTransform;
-
-  console.log('remarkPlugins', remarkPlugins);
-  console.log('rehypePlugins', rehypePlugins);
 
   const processor = unified()
     .use(remarkParse)
@@ -75,7 +72,7 @@ export function Markdown(options: MarkdownOptions) {
     unreachable(
       'Unexpected combined `allowedElements` and `disallowedElements`, expected one or the other'
     );
-  }
+  };
 
 
   const mdastTree = processor.parse(file);
@@ -91,9 +88,9 @@ export function Markdown(options: MarkdownOptions) {
     } as any;
   }
 
-  visit(hastTree, transform);
+  visit(hastTree, transform)
 
-  return toJsxRuntime(hastTree, {
+  const tree = toJsxRuntime(hastTree, {
     Fragment,
     components,
     ignoreInvalidStyle: true,
@@ -103,6 +100,8 @@ export function Markdown(options: MarkdownOptions) {
     passNode: true,
     elementAttributeNameCase: 'html'
   });
+
+  return tree
 
   function transform(node, index, parent) {
     if (node.type === 'raw' && parent && typeof index === 'number') {

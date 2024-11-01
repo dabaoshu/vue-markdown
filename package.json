@@ -8,13 +8,9 @@
   },
   "dependencies": {
     "@vitejs/plugin-vue-jsx": "^4.0.0",
-    "vue": "^3.4.29",
-    "rehype-katex": "^7.0.0",
-    "remark-breaks": "^4.0.0",
-    "remark-gfm": "^4.0.0",
-    "remark-math": "^6.0.0"
+    "vue": "^3.4.29"
   },
-  "workspaces":[
+  "workspaces": [
     "packages/*"
   ],
   "devDependencies": {

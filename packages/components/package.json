@@ -1,6 +1,8 @@
 {
   "name": "@nnnb/markdown",
-  "version": "1.0.0",
+  "version": "0.0.4",
+  "module": "./dist/es/index.mjs",
+  "main": "./dist/lib/index.js",
   "scripts": {
     "build": "vite build",
     "build:style": "esno ./scripts/style"
@@ -26,5 +28,9 @@
     "cpy": "^11.1.0",
     "fast-glob": "^3.3.2",
     "vite-plugin-dts": "1.4.1"
-  }
+  },
+  "files": [
+    "dist/",
+    "package.json"
+  ]
 }
