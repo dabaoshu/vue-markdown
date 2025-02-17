@@ -1,9 +1,15 @@
 import { PropType, computed, defineComponent } from 'vue';
 import { Markdown as MarkdownRender, MarkdownOptions } from './markdown';
 import { unreachable } from 'devlop';
+export * from './utils';
 export { MarkdownRender };
 export type { MarkdownOptions } from './markdown';
-export type MarkdownProps = Omit<MarkdownOptions, 'children'>;
+export * from '../micromark-extension-tag';
+export type ExtraProps = {
+  openRehypeRaw: boolean;
+};
+export type MarkdownProps = Omit<MarkdownOptions, 'children'> & ExtraProps;
+
 export const Markdownprops = {
   source: {
     type: String,
@@ -15,6 +21,14 @@ export const Markdownprops = {
   },
   components: {
     type: Object as PropType<MarkdownProps['components']>,
+    required: false
+  },
+  customElements: {
+    type: Object as PropType<MarkdownProps['customElements']>,
+    required: false
+  },
+  allowedElements: {
+    type: Array as PropType<MarkdownProps['allowedElements']>,
     required: false
   },
   disallowedElements: {
@@ -67,16 +81,17 @@ export const Markdown = defineComponent({
       if (typeof children !== 'string') {
         unreachable(
           'Unexpected value `' +
-          children +
-          '` for `children` prop, expected `string`'
+            children +
+            '` for `children` prop, expected `string`'
         );
       }
       return props.source || children;
     });
     const { components: props_components, source, ..._props } = props;
-    console.log("mk 源码");
-    
+    // console.log('mk 源码');
+
     return () => {
+      // const { remarkPlugins } = _props;
       return (
         <MarkdownRender
           className={attrs.class as string}

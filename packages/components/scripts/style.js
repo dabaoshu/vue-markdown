@@ -3,16 +3,27 @@ import { resolve, dirname } from 'path';
 import { promises as fs } from 'fs';
 import glob from 'fast-glob';
 import scss from 'sass';
-const sourceDir = resolve(__dirname, './');
-//lib文件
-const targetLib = resolve(__dirname, '../lib');
-//es文件
-const targetEs = resolve(__dirname, '../es');
 
-const srcDir = resolve(__dirname, './');
-const buildLess = async () => {
-  await cpy(`${sourceDir}/**/*.scss`, targetLib);
-  await cpy(`${sourceDir}/**/*.scss`, targetEs);
+const sourceDir = resolve(__dirname, '..');
+//lib文件
+const targetLib = resolve(__dirname, '../dist/lib');
+//es文件
+const targetEs = resolve(__dirname, '../dist/es');
+
+
+
+const srcDir = resolve(__dirname, './dist');
+const buildScss = async () => {
+
+  const sourceDirScss = `${sourceDir}/**/*.scss`
+  console.log(sourceDirScss, targetLib);
+  const step1 = await cpy(sourceDirScss, targetLib);
+  debugger
+
+  console.log(targetEs, step1);
+
+  await cpy(sourceDirScss, targetEs);
+  console.log('copy scss success');
 
   //获取打包后.less文件目录(lib和es一样)
   const scssFiles = await glob('**/*.scss', { cwd: srcDir, onlyFiles: true });
@@ -38,4 +49,4 @@ const buildLess = async () => {
   }
 };
 scss.compileAsync;
-buildLess();
+buildScss();

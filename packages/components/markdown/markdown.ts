@@ -7,12 +7,71 @@ import remarkRehype, { Options as RemarkRehypeOptions } from 'remark-rehype';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { VFile } from 'vfile';
+import {
+  getEndTag,
+  getStartTag // sliceText
+} from './utils';
+import { merge } from 'lodash';
 const emptyPlugins = [];
 const emptyRemarkRehypeOptions: RemarkRehypeOptions = {
   allowDangerousHtml: true
 };
 const safeProtocol = /^(https?|ircs?|mailto|xmpp)$/i;
 
+const matchTag = (tags, value) => {
+  if (!Array.isArray(tags)) {
+    return false;
+  }
+  return tags.some(
+    (tag) => getStartTag(value, tag) === 0 || getEndTag(value, tag) === 0
+  );
+};
+
+export const markdown_token_raw = 'markdown_token_raw';
+
+const markdown_token_html_all = 'markdown_token_html_all';
+export const getDefaultHandlers = (tags) => {
+  // console.log('tags', tags);
+  return {
+    html: (state, node, parent) => {
+      // console.log('html', node.value, { state, node, parent });
+      // if (node.value && hasHtmlTag(node.value, 'think')) {
+      //   // const result = { type: markdown_token_html_all, value: node.value };
+      //   const r1 = sliceText(node.value, tags);
+      //   if (!r1) return node;
+      //   const [children, subChildren] = r1;
+      //   const results = state.all({ type: 'paragraph', children });
+      //   const result = {
+      //     type: "element",
+      //     properties: {},
+      //     tagName: "div",
+      //     children: state.wrap(results, true)
+      //   };
+
+      //   state.patch(node, result);
+      //   // parent.children[index] = { type: 'text', value: node.value };
+      //   return state.applyData(node, result);
+      // }
+      if (node.value && matchTag(tags, node.value)) {
+        const result = { type: 'raw', value: node.value };
+        state.patch(node, result);
+        return state.applyData(node, result);
+      }
+      /** 
+       *if (state.options.allowDangerousHtml) {
+        const result = { type: "raw", value: node.value };
+        state.patch(node, result);
+        return state.applyData(node, result);
+      */
+
+      if (state.options.allowDangerousHtml) {
+        const result = { type: markdown_token_raw, value: node.value };
+        state.patch(node, result);
+        return state.applyData(node, result);
+      }
+    }
+  };
+};
 // 定义一些类型以增强代码的可读性和类型检查
 export interface MarkdownOptions {
   allowedElements?: string[];
@@ -24,6 +83,7 @@ export interface MarkdownOptions {
   /** 需要具体化组件的类型 */
   components?: Record<string, any>;
   disallowedElements?: string[];
+  customElements?: string[];
   rehypePlugins?: any[];
   remarkPlugins?: any[];
   remarkRehypeOptions?: object; // 需要具体化选项的类型
@@ -38,13 +98,23 @@ export function Markdown(options: MarkdownOptions) {
   const children = options.children || '';
   const className = options.className;
   const components = options.components;
-
   const disallowedElements = options.disallowedElements;
   const rehypePlugins = options.rehypePlugins || emptyPlugins;
   const remarkPlugins = options.remarkPlugins || emptyPlugins;
+  let handlers = {};
+  if (
+    Array.isArray(options.customElements) &&
+    options.customElements.length > 0
+  ) {
+    handlers = getDefaultHandlers(options.customElements);
+  }
+
+  const _remarkRehypeOptions = merge({ handlers }, options.remarkRehypeOptions);
+
   const remarkRehypeOptions = options.remarkRehypeOptions
-    ? { ...options.remarkRehypeOptions, ...emptyRemarkRehypeOptions }
-    : emptyRemarkRehypeOptions;
+    ? { ..._remarkRehypeOptions, ...emptyRemarkRehypeOptions }
+    : { ...emptyRemarkRehypeOptions, handlers };
+  // console.log("_remarkRehypeOptions", _remarkRehypeOptions, remarkRehypeOptions);
 
   const skipHtml = options.skipHtml;
   const unwrapDisallowed = options.unwrapDisallowed;
@@ -54,7 +124,7 @@ export function Markdown(options: MarkdownOptions) {
     .use(remarkParse)
     .use(remarkPlugins)
     .use(remarkRehype, remarkRehypeOptions)
-    .use(rehypePlugins)
+    .use(rehypePlugins); // .use(rehypeRaw, { passThrough: remarkRehypeOptions.allowDangerousHtml })
 
   const file = new VFile();
 
@@ -63,8 +133,8 @@ export function Markdown(options: MarkdownOptions) {
   } else {
     unreachable(
       'Unexpected value `' +
-      children +
-      '` for `children` prop, expected `string`'
+        children +
+        '` for `children` prop, expected `string`'
     );
   }
 
@@ -72,11 +142,12 @@ export function Markdown(options: MarkdownOptions) {
     unreachable(
       'Unexpected combined `allowedElements` and `disallowedElements`, expected one or the other'
     );
-  };
-
+  }
 
   const mdastTree = processor.parse(file);
+
   let hastTree = processor.runSync(mdastTree, file);
+  // console.log({ mdastTree, hastTree });
 
   // Wrap in `div` if there’s a class name.
   if (className) {
@@ -88,7 +159,7 @@ export function Markdown(options: MarkdownOptions) {
     } as any;
   }
 
-  visit(hastTree, transform)
+  visit(hastTree, transform);
 
   const tree = toJsxRuntime(hastTree, {
     Fragment,
@@ -101,7 +172,7 @@ export function Markdown(options: MarkdownOptions) {
     elementAttributeNameCase: 'html'
   });
 
-  return tree
+  return tree;
 
   function transform(node, index, parent) {
     if (node.type === 'raw' && parent && typeof index === 'number') {
@@ -110,9 +181,26 @@ export function Markdown(options: MarkdownOptions) {
       } else {
         parent.children[index] = { type: 'text', value: node.value };
       }
-
       return index;
     }
+    if (
+      node.type === markdown_token_raw &&
+      parent &&
+      typeof index === 'number'
+    ) {
+      console.log('markdown_token_raw——transform', node, index, parent);
+
+      if (skipHtml) {
+        parent.children.splice(index, 1);
+      } else {
+        parent.children[index] = { type: 'text', value: node.value };
+      }
+      return index;
+    }
+
+    // if (node.type === markdown_token_html_all && typeof index === 'number') {
+    //   console.log('markdown_token_html_all——transform', node, index, parent);
+    // }
 
     if (node.type === 'element') {
       let key;
@@ -134,8 +222,9 @@ export function Markdown(options: MarkdownOptions) {
       let remove = allowedElements
         ? !allowedElements.includes(node.tagName)
         : disallowedElements
-          ? disallowedElements.includes(node.tagName)
-          : false;
+        ? disallowedElements.includes(node.tagName)
+        : false;
+
       if (!remove && allowElement && typeof index === 'number') {
         remove = !allowElement(node, index, parent);
       }
