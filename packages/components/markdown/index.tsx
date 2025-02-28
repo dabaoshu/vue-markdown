@@ -1,10 +1,11 @@
 import { PropType, computed, defineComponent } from 'vue';
 import { Markdown as MarkdownRender, MarkdownOptions } from './markdown';
 import { unreachable } from 'devlop';
+import { remarkThink } from '../remark-think';
 export * from './utils';
+export * from '../remark-think';
 export { MarkdownRender };
 export type { MarkdownOptions } from './markdown';
-export * from '../micromark-extension-tag';
 export type ExtraProps = {
   openRehypeRaw: boolean;
 };
@@ -90,14 +91,25 @@ export const Markdown = defineComponent({
     const { components: props_components, source, ..._props } = props;
     // console.log('mk 源码');
 
+    const remarkPlugins = computed(() => {
+      const { remarkPlugins } = props;
+      const internalRemarkPlugins = [remarkThink, { tags: customElements }];
+      if (Array.isArray(remarkPlugins)) {
+        return remarkPlugins.concat([internalRemarkPlugins]);
+      }
+      return [internalRemarkPlugins];
+    });
+
     return () => {
       // const { remarkPlugins } = _props;
+      // console.log(remarkPlugins);
       return (
         <MarkdownRender
           className={attrs.class as string}
           components={components.value}
           children={children.value}
           {..._props}
+          remarkPlugins={remarkPlugins.value}
         />
       );
     };

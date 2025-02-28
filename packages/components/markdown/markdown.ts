@@ -7,71 +7,71 @@ import remarkRehype, { Options as RemarkRehypeOptions } from 'remark-rehype';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { VFile } from 'vfile';
-import {
-  getEndTag,
-  getStartTag // sliceText
-} from './utils';
-import { merge } from 'lodash';
+import merge from 'lodash/merge';
+
+
 const emptyPlugins = [];
 const emptyRemarkRehypeOptions: RemarkRehypeOptions = {
   allowDangerousHtml: true
 };
 const safeProtocol = /^(https?|ircs?|mailto|xmpp)$/i;
 
-const matchTag = (tags, value) => {
-  if (!Array.isArray(tags)) {
-    return false;
-  }
-  return tags.some(
-    (tag) => getStartTag(value, tag) === 0 || getEndTag(value, tag) === 0
-  );
-};
+// const matchTag = (tags, value) => {
+//   if (!Array.isArray(tags)) {
+//     return false;
+//   }
+//   return tags.some(
+//     (tag) => getStartTag(value, tag) === 0 || getEndTag(value, tag) === 0
+//   );
+// };
 
 export const markdown_token_raw = 'markdown_token_raw';
 
 const markdown_token_html_all = 'markdown_token_html_all';
-export const getDefaultHandlers = (tags) => {
-  // console.log('tags', tags);
-  return {
-    html: (state, node, parent) => {
-      // console.log('html', node.value, { state, node, parent });
-      // if (node.value && hasHtmlTag(node.value, 'think')) {
-      //   // const result = { type: markdown_token_html_all, value: node.value };
-      //   const r1 = sliceText(node.value, tags);
-      //   if (!r1) return node;
-      //   const [children, subChildren] = r1;
-      //   const results = state.all({ type: 'paragraph', children });
-      //   const result = {
-      //     type: "element",
-      //     properties: {},
-      //     tagName: "div",
-      //     children: state.wrap(results, true)
-      //   };
+// export const getDefaultHandlers = (tags) => {
+//   // console.log('tags', tags);
+//   return {
+//     html: (state, node, parent) => {
+//       console.log('html', node.value, { state, node, parent });
+//       // if (node.value && hasHtmlTag(node.value, 'think')) {
+//       //   // const result = { type: markdown_token_html_all, value: node.value };
+//       //   const r1 = sliceText(node.value, tags);
+//       //   if (!r1) return node;
+//       //   const [children, subChildren] = r1;
+//       //   const results = state.all({ type: 'paragraph', children });
+//       //   const result = {
+//       //     type: "element",
+//       //     properties: {},
+//       //     tagName: "div",
+//       //     children: state.wrap(results, true)
+//       //   };
 
-      //   state.patch(node, result);
-      //   // parent.children[index] = { type: 'text', value: node.value };
-      //   return state.applyData(node, result);
-      // }
-      if (node.value && matchTag(tags, node.value)) {
-        const result = { type: 'raw', value: node.value };
-        state.patch(node, result);
-        return state.applyData(node, result);
-      }
-      /** 
-       *if (state.options.allowDangerousHtml) {
-        const result = { type: "raw", value: node.value };
-        state.patch(node, result);
-        return state.applyData(node, result);
-      */
+//       //   state.patch(node, result);
+//       //   // parent.children[index] = { type: 'text', value: node.value };
+//       //   return state.applyData(node, result);
+//       // }
+//       // if (node.value && matchTag(tags, node.value)) {
+//       //   const result = { type: 'raw', value: node.value };
+//       //   console.log(node.value);
 
-      if (state.options.allowDangerousHtml) {
-        const result = { type: markdown_token_raw, value: node.value };
-        state.patch(node, result);
-        return state.applyData(node, result);
-      }
-    }
-  };
-};
+//       //   state.patch(node, result);
+//       //   return state.applyData(node, result);
+//       // }
+//       /**
+//        *if (state.options.allowDangerousHtml) {
+//         const result = { type: "raw", value: node.value };
+//         state.patch(node, result);
+//         return state.applyData(node, result);
+//       */
+
+//       if (state.options.allowDangerousHtml) {
+//         const result = { type: markdown_token_raw, value: node.value };
+//         state.patch(node, result);
+//         return state.applyData(node, result);
+//       }
+//     }
+//   };
+// };
 // 定义一些类型以增强代码的可读性和类型检查
 export interface MarkdownOptions {
   allowedElements?: string[];
@@ -102,12 +102,12 @@ export function Markdown(options: MarkdownOptions) {
   const rehypePlugins = options.rehypePlugins || emptyPlugins;
   const remarkPlugins = options.remarkPlugins || emptyPlugins;
   let handlers = {};
-  if (
-    Array.isArray(options.customElements) &&
-    options.customElements.length > 0
-  ) {
-    handlers = getDefaultHandlers(options.customElements);
-  }
+  // if (
+  //   Array.isArray(options.customElements) &&
+  //   options.customElements.length > 0
+  // ) {
+  //   handlers = getDefaultHandlers(options.customElements);
+  // }
 
   const _remarkRehypeOptions = merge({ handlers }, options.remarkRehypeOptions);
 
@@ -147,7 +147,6 @@ export function Markdown(options: MarkdownOptions) {
   const mdastTree = processor.parse(file);
 
   let hastTree = processor.runSync(mdastTree, file);
-  // console.log({ mdastTree, hastTree });
 
   // Wrap in `div` if there’s a class name.
   if (className) {
@@ -188,7 +187,7 @@ export function Markdown(options: MarkdownOptions) {
       parent &&
       typeof index === 'number'
     ) {
-      console.log('markdown_token_raw——transform', node, index, parent);
+      // console.log('markdown_token_raw——transform', node, index, parent);
 
       if (skipHtml) {
         parent.children.splice(index, 1);
