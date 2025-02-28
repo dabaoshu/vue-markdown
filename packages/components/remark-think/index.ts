@@ -2,10 +2,15 @@ import { fromMarkdownThink } from './fromMarkdownThink';
 import { thinkSyntax } from './syntax';
 import { ThinkFlowOption } from './type';
 
-export function remarkThink(options: ThinkFlowOption) {
-  const tags = options.tags || [];
+export function remarkThink(_options: ThinkFlowOption) {
+  const tags = _options.tags || [];
+  const options = {
+    ..._options,
+    customTagName: tags[0]
+  };
   const self = /** @type {Processor<Root>} */ this;
   const data = this.data();
+  console.log('options', options);
 
   const micromarkExtensions =
     data.micromarkExtensions || (data.micromarkExtensions = []);

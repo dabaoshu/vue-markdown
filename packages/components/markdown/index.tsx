@@ -92,12 +92,17 @@ export const Markdown = defineComponent({
     // console.log('mk 源码');
 
     const remarkPlugins = computed(() => {
-      const { remarkPlugins } = props;
-      const internalRemarkPlugins = [remarkThink, { tags: customElements }];
-      if (Array.isArray(remarkPlugins)) {
-        return remarkPlugins.concat([internalRemarkPlugins]);
+      const { remarkPlugins: remarkPlugins2,customElements } = props;
+      if (customElements) {
+        console.log('customElements', customElements);
+
+        const internalRemarkPlugins = [remarkThink, { tags: customElements }];
+        if (Array.isArray(remarkPlugins2)) {
+          return remarkPlugins2.concat([internalRemarkPlugins]);
+        }
+        return [internalRemarkPlugins];
       }
-      return [internalRemarkPlugins];
+      return remarkPlugins2;
     });
 
     return () => {
