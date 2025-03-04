@@ -6,9 +6,8 @@ export function remarkThink(_options: ThinkFlowOption) {
   const tags = _options.tags || [];
   const options = {
     ..._options,
-    customTagName: tags[0]
+    customTags: tags
   };
-  const self = /** @type {Processor<Root>} */ this;
   const data = this.data();
   console.log('options', options);
 

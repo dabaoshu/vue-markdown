@@ -1,4 +1,3 @@
-import { VFile } from 'vfile';
 export const hasHtmlTag = (text: string, tag: string): boolean => {
   const regex = new RegExp(`<(${tag})[^>]*>.*?</\\1>`, 'i');
   return regex.test(text);
@@ -10,15 +9,11 @@ export const getStartTag = (text: string, tag: string): number => {
   return match ? match.index : -1;
 };
 
-
 export const getEndTag = (text: string, tag: string): number => {
   const regex = new RegExp(`</${tag}>`, 'i');
   const match = text.match(regex);
   return match ? match.index : -1;
 };
-
-
-
 
 export const sliceText = (text: string, tag: string) => {
   const startTagIndex = getStartTag(text, tag);
@@ -50,4 +45,3 @@ export const sliceText = (text: string, tag: string) => {
     { type: 'paragraph', value: after }
   ];
 };
-

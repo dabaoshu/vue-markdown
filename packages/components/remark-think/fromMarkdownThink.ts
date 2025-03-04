@@ -1,53 +1,69 @@
 // import { types } from 'micromark-util-symbol'; // 常量和类型定义
 import { ThinkEvent, ThinkFlowOption } from './type';
 
+const getStartTag = (text: string, tag: string): number => {
+  const regex = new RegExp(`<${tag}[^>]*>`, 'i');
+  const match = text.match(regex);
+  return match ? match.index : -1;
+};
+
 export function fromMarkdownThink(option: ThinkFlowOption) {
   let match = false;
-  // console.log(option);
+  const tags = option.tags || ['think'];
 
   return {
     enter: {
       [ThinkEvent.thinkFlow]: handleThinkOpen,
-      // [ThinkEvent.thinkFlowFenceSequence]: handleThinkFenceOpen,
-      // [ThinkEvent.thinkFlowCloseFenceSequence]: handleThinkFenceOpen,
-      [ThinkEvent.thinkFlowValue]: handleThinkValueOpen
+      [ThinkEvent.thinkFlowValue]: handlebuffer,
+      [ThinkEvent.thinkFlowFenceSequence]: handlebuffer
     },
     exit: {
       [ThinkEvent.thinkFlow]: handleThinkClose,
-      // [ThinkEvent.thinkFlowFenceSequence]: handleThinkFenceClose,
       [ThinkEvent.thinkFlowValue]: handleThinkValueClose,
-      [ThinkEvent.thinkFlowCloseFenceSequence]:
-        handlethinkFlowCloseFenceSequence,
-      [ThinkEvent.lineEnding]: handleLineEnding
+      // [ThinkEvent.thinkFlowCloseFenceSequence]:
+      //   handlethinkFlowCloseFenceSequence,
+      [ThinkEvent.lineEnding]: handleLineEnding,
+      [ThinkEvent.thinkFlowFenceSequence]: handleThinkFenceClose
     }
   };
 
+  // 处理token文本内容
+  function handlebuffer(token) {
+    this.buffer();
+  }
+
+  /** */
+  function handleThinkFenceClose(token) {
+    this.resume();
+    const sequence = this.sliceSerialize(token);
+    // console.log('handleThinkFenceClose', { sequence, tags });
+    const regex = new RegExp('<(?!/)(.*?)>', 'ig');
+    const node = this.stack[this.stack.length - 1];
+    // 只匹配首标签
+    if (!node.tagName && sequence && regex.test(sequence)) {
+      const regex = new RegExp('<(?!/)(.*?)>', 'ig');
+      const obj = regex.exec(sequence);
+      // 这是开始标签
+      const matchedTag = tags.find((tag) => obj[1] === tag);
+      if (matchedTag) {
+        const thinkNode = getThinkNode.call(this);
+        thinkNode.tagName = matchedTag;
+        node.tagName = matchedTag;
+      }
+    } else if (node.tagName) {
+      handlethinkFlowCloseFenceSequence.call(this);
+    }
+  }
+
   function handleThinkOpen(token) {
     match = true;
-    // const code = {
-    //   type: 'thinkFlow',
-    //   value: '',
-    //   children: [],
-    //   data: { _value: '', _tag: '' }
-    // };
-    // this.enter(
-    //   {
-    //     type: 'paragraph',
-    //     children: [code],
-    //     data: {
-    //       _value: ''
-    //     }
-    //   },
-    //   token
-    // );
-
     const code = {
       type: 'element',
       meta: {
         loading: true
       },
       value: '',
-      tagName: 'think',
+      tagName: '', // 将在解析标签序列时设置
       properties: {
         classname: 'thinkContent'
       },
@@ -58,25 +74,27 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
         type: 'thinkFlow',
         meta: null,
         value: '',
+        tagName: '',
         data: { hChildren: [code], value: '', loading: true }
       },
       token
     );
   }
-  // 标签内的文本内容
-  function handleThinkValueOpen(token) {
-    this.buffer(); // Start collecting value content
-  }
 
   function getThinkNode() {
-    const node = this.stack[this.stack.length - 1];
-    const thinkContentEle = node.data.hChildren[0];
-    return thinkContentEle;
+    const length = this.stack.length;
+    const node = this.stack[length - 1];
+    if (node.type === 'thinkFlow') {
+      const thinkContentEle = node.data.hChildren[0];
+      return thinkContentEle;
+    }
   }
 
   // 获取标签的每行内容类型
   function handleThinkValueClose(token) {
+    // console.log('handleThinkValueClose--1', this.stack[this.stack.length - 1]);
     this.resume(); // Get collected content
+    // console.log('handleThinkValueClose--2', this.stack[this.stack.length - 1]);
     const value = this.sliceSerialize(token);
     const thinkNode = getThinkNode.call(this);
     thinkNode.children.push({
@@ -91,26 +109,20 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
   }
 
   // 获取结束thinkFlowCloseFenceSequence
-  function handlethinkFlowCloseFenceSequence(token) {
-    // console.log('handlethinkFlowCloseFenceSequence');
-
+  function handlethinkFlowCloseFenceSequence() {
     const thinkNode = getThinkNode.call(this);
-
-    thinkNode.meta.loading = false;
-  }
-
-  // 获取标签类型
-  function handleThinkFenceClose(token) {
-    this.resume(); // Get collected content
-    const value = this.sliceSerialize(token);
-    // console.log('获取标签类型：handleThinkFence_Close', value);
+    if (thinkNode) {
+      // console.log('在加载结束');
+      thinkNode.meta.loading = false;
+    } else {
+      // this.stack
+      // console.log('在加载中');
+    }
   }
 
   function handleLineEnding(token) {
     if (match) {
       const value = this.sliceSerialize(token);
-      console.log('handleLineEnding_value', value);
-      const node = this.stack[this.stack.length - 1];
       const code = {
         type: 'element',
         value: '',
@@ -121,18 +133,13 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
       const thinkNode = getThinkNode.call(this);
       thinkNode.children.push(code);
       thinkNode.value += value;
-      // node.data._value += value;
       return;
-
-      // code.value += value;
     }
-    // this.config.exit.lineEnding(token);
   }
 
   function handleThinkClose(token) {
     const node = this.stack[this.stack.length - 1];
-    console.log('完整handleThinkClose', node);
-
+    // console.log('完整handleThinkClose', node);
     // const code = node.data.hChildren[0];
     // // 将数据作为文本节点添加到子元素的 children 中
     // code.children.push({ type: 'text', value: this.resume() });

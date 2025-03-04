@@ -8,6 +8,6 @@ export const enum ThinkEvent {
 }
 
 export type ThinkFlowOption = {
-  customTagName?: string;
   tags: string[];
+  customTags?: string[]; // 替换 customTagName，支持多标签
 };

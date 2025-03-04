@@ -23,9 +23,12 @@ const getStrCode = (str) => {
  * name: 构造器名称
  */
 export const thinkFlow = (options?) => {
-  const { customTagName = 'think' } = options || {};
-  if (typeof customTagName !== 'string') {
-    throw new Error('customTagName must be a string');
+  const { tags = ['think'] } = options || {};
+  if (!Array.isArray(tags)) {
+    throw new Error('tags must be an array of strings');
+  }
+  if (tags.some((tag) => typeof tag !== 'string')) {
+    throw new Error('All tags must be strings');
   }
 
   return {
@@ -48,13 +51,13 @@ export const thinkFlow = (options?) => {
       tail && tail[1].type === types.linePrefix
         ? tail[2].sliceSerialize(tail[1], true).length
         : 0;
+    // 当前匹配的标签索引
     let thinkState = 0;
-    // const codeTags = [];
-    // const thinkText = 'think>';
-    const codeTags = Array.from(customTagName).map((i) => getStrCode(i)); // t h i n k
-    codeTags.push(codes.greaterThan);
-    // console.log('执行 thinkFlow tokenize');
-    // console.log(codeTags);
+    // 当前匹配的标签
+    let currentTag = '';
+    // 匹配到的标签
+    let matchedTag = '';
+
     return start;
 
     /**
@@ -65,33 +68,51 @@ export const thinkFlow = (options?) => {
       if (code !== codes.lessThan) return nok(code); // 不是 < 则失败
       effects.enter(ThinkEvent.thinkFlow);
       effects.enter(ThinkEvent.thinkFlowFence);
-      effects.consume(code);
       effects.enter(ThinkEvent.thinkFlowFenceSequence);
-      return openTag;
+      effects.consume(code);
+      return tagStart;
     }
 
     /**
      * 解析开始标签中的 "think" 文本
      * 逐字符匹配 t h i n k
      */
+    function tagStart(code) {
+      currentTag = '';
+      thinkState = 0;
+      return openTag(code);
+    }
+
     function openTag(code) {
-      const strLength = codeTags.length - 1;
-      const needCode = codeTags[thinkState];
-      // console.log('openTag第', thinkState, '次', thinkText[thinkState], {
-      //   code,
-      //   needCode
-      // });
-      if (code !== needCode) return nok(code); // 不是期望的字符则失败
-      if (thinkState < strLength) {
+      // 如果当前没有匹配中的标签，尝试开始新的匹配
+      if (!currentTag) {
+        for (const tag of tags) {
+          if (code === getStrCode(tag[0])) {
+            currentTag = tag;
+            effects.consume(code);
+            thinkState = 1;
+            return openTag;
+          }
+        }
+        return nok(code);
+      }
+
+      // 继续匹配当前标签
+      if (code === getStrCode(currentTag[thinkState])) {
         effects.consume(code);
+        if (thinkState === currentTag.length - 1) {
+          matchedTag = currentTag;
+          return expectClosingBracket;
+        }
         thinkState++;
         return openTag;
       }
-      if (
-        thinkState === codeTags.length - 1 &&
-        needCode === codes.greaterThan
-      ) {
-        // '>'
+
+      return nok(code);
+    }
+
+    function expectClosingBracket(code) {
+      if (code === codes.greaterThan) {
         effects.consume(code);
         effects.exit(ThinkEvent.thinkFlowFenceSequence);
         return factorySpace(effects, afterOpenSequence, types.whitespace);
@@ -197,6 +218,7 @@ export const thinkFlow = (options?) => {
      */
     function tokenizeClosingFence(effects, ok, nok) {
       let matched = false;
+      let closeThinkState = 0;
 
       return factorySpace(
         effects,
@@ -211,9 +233,7 @@ export const thinkFlow = (options?) => {
        * 处理结束标签前的空格
        */
       function closingPrefixAfter(code) {
-        // debugger;
         if (code === codes.lessThan) {
-          // '<'
           effects.enter(ThinkEvent.thinkFlowFence);
           effects.enter(ThinkEvent.thinkFlowFenceSequence);
           effects.enter(ThinkEvent.thinkFlowCloseFenceSequence);
@@ -228,10 +248,7 @@ export const thinkFlow = (options?) => {
        */
       function closingSlash(code) {
         if (code === codes.slash) {
-          // 初始化 thinkState
-          thinkState = 0;
-          // '/'
-
+          closeThinkState = 0;
           effects.consume(code);
           return closingTag;
         }
@@ -242,24 +259,16 @@ export const thinkFlow = (options?) => {
        * 匹配结束标签中的 "think" 文本
        */
       function closingTag(code) {
-        const strLength = codeTags.length - 1;
-        const needCode = codeTags[thinkState];
-        // console.log('closingTag第', thinkState, '次', thinkText[thinkState], {
-        //   code,
-        //   needCode
-        // });
-        if (code !== needCode) return nok(code); // 不是
-        if (thinkState < strLength) {
+        if (!matchedTag) return nok(code);
+
+        if (code === getStrCode(matchedTag[closeThinkState])) {
           effects.consume(code);
-          thinkState++;
+          if (closeThinkState === matchedTag.length - 1) {
+            matched = true;
+            return closingTagEnd;
+          }
+          closeThinkState++;
           return closingTag;
-        }
-        if (
-          thinkState === codeTags.length - 1 &&
-          needCode === codes.greaterThan
-        ) {
-          matched = true;
-          return closingTagEnd(code);
         }
         return nok(code);
       }
@@ -269,12 +278,9 @@ export const thinkFlow = (options?) => {
        */
       function closingTagEnd(code) {
         if (code === codes.greaterThan && matched) {
-          // '>'
           effects.consume(code);
           effects.exit(ThinkEvent.thinkFlowCloseFenceSequence);
-
           effects.exit(ThinkEvent.thinkFlowFenceSequence);
-
           return factorySpace(effects, closingSequenceEnd, types.whitespace);
         }
         return nok(code);
@@ -333,7 +339,7 @@ function tokenizeNonLazyContinuation(effects, ok, nok) {
     if (code === null) {
       return ok(code);
     }
-    console.log('expected eol');
+    // console.log('expected eol');
     effects.enter(ThinkEvent.lineEnding);
     effects.consume(code);
     effects.exit(ThinkEvent.lineEnding);
