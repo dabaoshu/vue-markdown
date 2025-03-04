@@ -9,7 +9,7 @@ export function remarkThink(_options: ThinkFlowOption) {
     customTags: tags
   };
   const data = this.data();
-  console.log('options', options);
+  // console.log('options', options);
 
   const micromarkExtensions =
     data.micromarkExtensions || (data.micromarkExtensions = []);
