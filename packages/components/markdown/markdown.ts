@@ -9,7 +9,6 @@ import { visit } from 'unist-util-visit';
 import { VFile } from 'vfile';
 import merge from 'lodash/merge';
 
-
 const emptyPlugins = [];
 const emptyRemarkRehypeOptions: RemarkRehypeOptions = {
   allowDangerousHtml: true
@@ -147,6 +146,7 @@ export function Markdown(options: MarkdownOptions) {
   const mdastTree = processor.parse(file);
 
   let hastTree = processor.runSync(mdastTree, file);
+  console.log({ mdastTree, hastTree });
 
   // Wrap in `div` if there’s a class name.
   if (className) {
