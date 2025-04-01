@@ -2,12 +2,30 @@ import { Fragment, jsx, jsxs } from 'vue-jsx-runtime/jsx-runtime';
 import { CreateVMarkdown, MarkdownOptions } from './markdown';
 import { PropType, computed, defineComponent } from 'vue';
 import { unreachable } from 'devlop';
-import { remarkThink } from '../remark-think';
+import { processThink, preprocessMath } from './utils';
+import flow from 'lodash/flow';
 /**创建vue的markdown */
-const MarkdownRender = (o) => CreateVMarkdown(o, { Fragment, jsx, jsxs });
-export type VueMarkdownProps = Omit<MarkdownOptions, 'children'>;
 
-export const Markdownprops = {
+type VueMarkdownProps2 = {
+  /**自定义元素 remarkThink*/
+  customElements?: string[];
+  /**remark 选项*/
+  math?: {
+    strict?: boolean;
+    remarkOptions?: any;
+    rehypeOptions?: any;
+  };
+};
+export const VueMarkdownRender = (o) =>
+  CreateVMarkdown(o, { Fragment, jsx, jsxs });
+export type VueMarkdownProps = Omit<MarkdownOptions, 'children'> &
+  VueMarkdownProps2;
+const defaultMath = {
+  strict: true,
+  remarkOptions: {},
+  rehypeOptions: {}
+};
+export const VueMarkdownprops = {
   source: {
     type: String,
     required: true
@@ -19,6 +37,11 @@ export const Markdownprops = {
   components: {
     type: Object as PropType<VueMarkdownProps['components']>,
     required: false
+  },
+  math: {
+    type: Object as PropType<VueMarkdownProps['math']>,
+    required: false,
+    default: () => defaultMath
   },
   customElements: {
     type: Object as PropType<VueMarkdownProps['customElements']>,
@@ -61,7 +84,7 @@ export const Markdownprops = {
 
 export const VueMarkdown = defineComponent({
   name: 'VueMarkdown',
-  props: Markdownprops,
+  props: VueMarkdownprops,
   setup(props, { slots, attrs }) {
     const components = computed(() => {
       const { default: defaultSlot, ...otherSlots } = slots;
@@ -71,6 +94,9 @@ export const VueMarkdown = defineComponent({
         ...otherSlots
       };
     });
+
+    const { components: props_components, source, ..._props } = props;
+
     const children = computed(() => {
       const { default: defaultSlot } = slots;
       const children =
@@ -84,28 +110,50 @@ export const VueMarkdown = defineComponent({
       }
       return props.source || children;
     });
-    const { components: props_components, source, ..._props } = props;
 
-    const remarkPlugins = computed(() => {
-      const { remarkPlugins: remarkPlugins2, customElements } = props;
-      if (customElements) {
-        const internalRemarkPlugins = [remarkThink, { tags: customElements }];
-        if (Array.isArray(remarkPlugins2)) {
-          return remarkPlugins2.concat([internalRemarkPlugins]);
+    const mergeProps = computed(() => {
+      const flows = [];
+      const remarkPlugins = props.remarkPlugins || [];
+      const rehypePlugins = props.rehypePlugins || [];
+      const math = props.math;
+      if (!!math) {
+        const {
+          flow: mathFlow,
+          rehypePlugins: mathRehypePlugins,
+          remarkPlugins: mathRemarkPlugins
+        } = preprocessMath(math.remarkOptions, math.rehypeOptions);
+        if (!math.strict) {
+          flows.push(mathFlow);
         }
-        return [internalRemarkPlugins];
+        rehypePlugins.push(mathRehypePlugins);
+        remarkPlugins.push(mathRemarkPlugins);
       }
-      return remarkPlugins2;
+
+      if (props.customElements) {
+        const { remarkPlugins: thinkRemarkPlugins } = processThink({
+          tags: props.customElements
+        });
+        remarkPlugins.push(thinkRemarkPlugins);
+      }
+
+      return {
+        flows,
+        remarkPlugins,
+        rehypePlugins
+      };
     });
 
     return () => {
+      const { flows, remarkPlugins, rehypePlugins } = mergeProps.value;
+      const source = flow(flows)(children.value);
       return (
-        <MarkdownRender
+        <VueMarkdownRender
           className={attrs.class as string}
           components={components.value}
-          children={children.value}
           {..._props}
-          remarkPlugins={remarkPlugins.value}
+          children={source}
+          remarkPlugins={remarkPlugins}
+          rehypePlugins={rehypePlugins}
         />
       );
     };

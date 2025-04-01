@@ -27,7 +27,6 @@ export interface MarkdownOptions {
   /** 需要具体化组件的类型 */
   components?: Record<string, any>;
   disallowedElements?: string[];
-  customElements?: string[];
   rehypePlugins?: any[];
   remarkPlugins?: any[];
   remarkRehypeOptions?: object; // 需要具体化选项的类型

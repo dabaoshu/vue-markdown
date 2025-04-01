@@ -23,7 +23,9 @@
     "unified": "^11.0.5",
     "unist-util-visit": "^5.0.0",
     "vfile": "^6.0.0",
-    "vue-jsx-runtime": "^0.1.0"
+    "vue-jsx-runtime": "^0.1.0",
+    "remark-math": "^5.1.1",
+    "rehype-katex": "^6.0.1"
   },
   "devDependencies": {
     "cpy": "^11.1.0",

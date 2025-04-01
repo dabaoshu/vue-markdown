@@ -1,12 +1,3 @@
-/**
- * 这是一个用于解析 Markdown 中 <think> 标签的扩展
- * 它可以解析如下格式的内容:
- * <think>
- * 内容
- * </think>
- * import {} from 'micromark-util-types';
- */
-
 import { factorySpace } from 'micromark-factory-space'; // 用于处理空格
 import { markdownLineEnding } from 'micromark-util-character'; // 用于判断行结束
 import { codes, constants, types, values } from 'micromark-util-symbol'; // 常量和类型定义
