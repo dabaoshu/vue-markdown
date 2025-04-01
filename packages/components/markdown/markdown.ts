@@ -1,13 +1,14 @@
 import { unreachable } from 'devlop';
-import { toJsxRuntime } from 'hast-util-to-jsx-runtime';
+import {
+  toJsxRuntime,
+  Options as JsxRuntimeOption
+} from 'hast-util-to-jsx-runtime';
 import { urlAttributes } from 'html-url-attributes';
-import { Fragment, jsx, jsxs } from 'vue-jsx-runtime/jsx-runtime';
 import remarkParse from 'remark-parse';
 import remarkRehype, { Options as RemarkRehypeOptions } from 'remark-rehype';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { VFile } from 'vfile';
-import merge from 'lodash/merge';
 
 const emptyPlugins = [];
 const emptyRemarkRehypeOptions: RemarkRehypeOptions = {
@@ -15,63 +16,7 @@ const emptyRemarkRehypeOptions: RemarkRehypeOptions = {
 };
 const safeProtocol = /^(https?|ircs?|mailto|xmpp)$/i;
 
-// const matchTag = (tags, value) => {
-//   if (!Array.isArray(tags)) {
-//     return false;
-//   }
-//   return tags.some(
-//     (tag) => getStartTag(value, tag) === 0 || getEndTag(value, tag) === 0
-//   );
-// };
-
-export const markdown_token_raw = 'markdown_token_raw';
-
-const markdown_token_html_all = 'markdown_token_html_all';
-// export const getDefaultHandlers = (tags) => {
-//   // console.log('tags', tags);
-//   return {
-//     html: (state, node, parent) => {
-//       console.log('html', node.value, { state, node, parent });
-//       // if (node.value && hasHtmlTag(node.value, 'think')) {
-//       //   // const result = { type: markdown_token_html_all, value: node.value };
-//       //   const r1 = sliceText(node.value, tags);
-//       //   if (!r1) return node;
-//       //   const [children, subChildren] = r1;
-//       //   const results = state.all({ type: 'paragraph', children });
-//       //   const result = {
-//       //     type: "element",
-//       //     properties: {},
-//       //     tagName: "div",
-//       //     children: state.wrap(results, true)
-//       //   };
-
-//       //   state.patch(node, result);
-//       //   // parent.children[index] = { type: 'text', value: node.value };
-//       //   return state.applyData(node, result);
-//       // }
-//       // if (node.value && matchTag(tags, node.value)) {
-//       //   const result = { type: 'raw', value: node.value };
-//       //   console.log(node.value);
-
-//       //   state.patch(node, result);
-//       //   return state.applyData(node, result);
-//       // }
-//       /**
-//        *if (state.options.allowDangerousHtml) {
-//         const result = { type: "raw", value: node.value };
-//         state.patch(node, result);
-//         return state.applyData(node, result);
-//       */
-
-//       if (state.options.allowDangerousHtml) {
-//         const result = { type: markdown_token_raw, value: node.value };
-//         state.patch(node, result);
-//         return state.applyData(node, result);
-//       }
-//     }
-//   };
-// };
-// 定义一些类型以增强代码的可读性和类型检查
+// export const markdown_token_raw = 'markdown_token_raw';
 export interface MarkdownOptions {
   allowedElements?: string[];
   allowElement?: (node: any, index: number, parent: any) => boolean;
@@ -91,63 +36,65 @@ export interface MarkdownOptions {
   urlTransform?: (url: string, attribute: string, node: any) => string;
 }
 
-export function Markdown(options: MarkdownOptions) {
-  const allowedElements = options.allowedElements;
-  const allowElement = options.allowElement;
-  const children = options.children || '';
-  const className = options.className;
-  const components = options.components;
-  const disallowedElements = options.disallowedElements;
+function createProcessor(options: MarkdownOptions) {
   const rehypePlugins = options.rehypePlugins || emptyPlugins;
+  // 获取rehype插件列表，如果未提供则使用空数组
   const remarkPlugins = options.remarkPlugins || emptyPlugins;
-  let handlers = {};
-  // if (
-  //   Array.isArray(options.customElements) &&
-  //   options.customElements.length > 0
-  // ) {
-  //   handlers = getDefaultHandlers(options.customElements);
-  // }
-
-  const _remarkRehypeOptions = merge({ handlers }, options.remarkRehypeOptions);
-
+  // 获取remark插件列表，如果未提供则使用空数组
   const remarkRehypeOptions = options.remarkRehypeOptions
-    ? { ..._remarkRehypeOptions, ...emptyRemarkRehypeOptions }
-    : { ...emptyRemarkRehypeOptions, handlers };
-  // console.log("_remarkRehypeOptions", _remarkRehypeOptions, remarkRehypeOptions);
-
-  const skipHtml = options.skipHtml;
-  const unwrapDisallowed = options.unwrapDisallowed;
-  const urlTransform = options.urlTransform || defaultUrlTransform;
+    ? {
+        ...options.remarkRehypeOptions,
+        ...emptyRemarkRehypeOptions
+      }
+    : { ...emptyRemarkRehypeOptions };
+  // 合并用户提供的remarkRehype选项和默认选项
 
   const processor = unified()
     .use(remarkParse)
     .use(remarkPlugins)
     .use(remarkRehype, remarkRehypeOptions)
-    .use(rehypePlugins); // .use(rehypeRaw, { passThrough: remarkRehypeOptions.allowDangerousHtml })
+    .use(rehypePlugins);
+  // 创建处理器并配置插件链
 
+  return processor;
+  // 返回配置好的处理器
+}
+
+function createFile(options: MarkdownOptions) {
+  const children = options.children || '';
+  // 获取children属性，如果未提供则使用空字符串
   const file = new VFile();
+  // 创建新的虚拟文件
 
   if (typeof children === 'string') {
     file.value = children;
+    // 如果children是字符串，则设置为文件内容
   } else {
     unreachable(
       'Unexpected value `' +
         children +
         '` for `children` prop, expected `string`'
     );
+    // 如果children不是字符串，则报错
   }
 
+  return file;
+  // 返回虚拟文件
+}
+
+function post(hastTree, options) {
+  const allowedElements = options.allowedElements;
+  const allowElement = options.allowElement;
+  const className = options.className;
+  const disallowedElements = options.disallowedElements;
+  const skipHtml = options.skipHtml;
+  const urlTransform = options.urlTransform || defaultUrlTransform;
+  const unwrapDisallowed = options.unwrapDisallowed;
   if (allowedElements && disallowedElements) {
     unreachable(
       'Unexpected combined `allowedElements` and `disallowedElements`, expected one or the other'
     );
   }
-
-  const mdastTree = processor.parse(file);
-
-  let hastTree = processor.runSync(mdastTree, file);
-  console.log({ mdastTree, hastTree });
-
   // Wrap in `div` if there’s a class name.
   if (className) {
     hastTree = {
@@ -157,22 +104,8 @@ export function Markdown(options: MarkdownOptions) {
       children: hastTree.type === 'root' ? hastTree.children : [hastTree]
     } as any;
   }
-
   visit(hastTree, transform);
-
-  const tree = toJsxRuntime(hastTree, {
-    Fragment,
-    components,
-    ignoreInvalidStyle: true,
-    jsx,
-    jsxs,
-    passKeys: true,
-    passNode: true,
-    elementAttributeNameCase: 'html'
-  });
-
-  return tree;
-
+  return hastTree;
   function transform(node, index, parent) {
     if (node.type === 'raw' && parent && typeof index === 'number') {
       if (skipHtml) {
@@ -182,23 +115,17 @@ export function Markdown(options: MarkdownOptions) {
       }
       return index;
     }
-    if (
-      node.type === markdown_token_raw &&
-      parent &&
-      typeof index === 'number'
-    ) {
-      // console.log('markdown_token_raw——transform', node, index, parent);
-
-      if (skipHtml) {
-        parent.children.splice(index, 1);
-      } else {
-        parent.children[index] = { type: 'text', value: node.value };
-      }
-      return index;
-    }
-
-    // if (node.type === markdown_token_html_all && typeof index === 'number') {
-    //   console.log('markdown_token_html_all——transform', node, index, parent);
+    // if (
+    //   node.type === markdown_token_raw &&
+    //   parent &&
+    //   typeof index === 'number'
+    // ) {
+    //   if (skipHtml) {
+    //     parent.children.splice(index, 1);
+    //   } else {
+    //     parent.children[index] = { type: 'text', value: node.value };
+    //   }
+    //   return index;
     // }
 
     if (node.type === 'element') {
@@ -239,6 +166,32 @@ export function Markdown(options: MarkdownOptions) {
       }
     }
   }
+}
+
+export function CreateVMarkdown(
+  options: MarkdownOptions,
+  jsxRuntime: JsxRuntimeOption
+) {
+  const components = options.components;
+  const processor = createProcessor(options);
+  const file = createFile(options);
+  const mdastTree = processor.parse(file);
+  let hastTree = processor.runSync(mdastTree, file);
+
+  hastTree = post(hastTree, options);
+
+  const tree = toJsxRuntime(hastTree, {
+    components,
+    ignoreInvalidStyle: true,
+    Fragment: jsxRuntime.Fragment,
+    jsx: jsxRuntime.jsx,
+    jsxs: jsxRuntime.jsxs,
+    passKeys: true,
+    passNode: true,
+    elementAttributeNameCase: 'html',
+    ...jsxRuntime
+  });
+  return tree;
 }
 
 /**
