@@ -12,7 +12,7 @@ export default defineConfig({
     dts({
       outputDir: path.join(outDir, './es'),
       //指定使用的tsconfig.json为我们整个项目根目录下掉,如果不配置,你也可以在components下新建tsconfig.json
-      tsConfigFilePath: './tsconfig.json'
+      tsConfigFilePath: path.resolve(__dirname, './tsconfig.json')
     }),
     //因为这个插件默认打包到es下，我们想让lib目录下也生成声明文件需要再配置一个
     dts({
@@ -28,7 +28,15 @@ export default defineConfig({
     minify: false,
     rollupOptions: {
       //忽略打包vue文件
-      external: ['vue', 'lodash'],
+      external: [
+        'vue',
+        'lodash',
+        'highlight.js',
+        'refractor',
+        'rehype-katex',
+        'remark-math',
+        /^lodash\/.*/
+      ],
       output: [
         {
           //打包格式

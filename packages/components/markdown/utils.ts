@@ -38,7 +38,7 @@ export const preprocessLaTeX = (content: string) => {
   return processedContent;
 };
 
-interface PreprocessMathResult {
+export interface PreprocessMathResult {
   remarkPlugins: any[];
   rehypePlugins: any[];
   flow: (content: string) => string;

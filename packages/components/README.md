@@ -1,3 +1,14 @@
+# @nnnb/markdown
+
+Vue 3 Markdown渲染组件，支持语法高亮、数学公式和自定义元素。
+
+## 安装
+
+使用 pnpm 安装:
+
+
+
+
 # Vue Markdown and Code Highlighting Components
 
 This package provides Vue components that extend Markdown functionality to support custom HTML-like tags in your markdown content and offers code syntax highlighting capabilities.
@@ -8,6 +19,20 @@ This package provides Vue components that extend Markdown functionality to suppo
 npm install @nnnb/markdown
 # or
 yarn add @nnnb/markdown
+# or
+pnpm add @nnnb/markdown
+```
+
+注意：本组件使用以下依赖作为对等依赖（peerDependencies），你需要在你的项目中安装它们：
+
+```bash
+npm add highlight.js lodash
+```
+
+如果需要数学公式支持，请额外安装：
+
+```bash
+npm add rehype-katex remark-math
 ```
 
 ## Components
