@@ -9,6 +9,7 @@ const getStartTag = (text: string, tag: string): number => {
 
 export function fromMarkdownThink(option: ThinkFlowOption) {
   let match = false;
+  let firstLineEnding = false;
   const tags = option.tags || ['think'];
 
   return {
@@ -46,8 +47,10 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
       // 这是开始标签
       const matchedTag = tags.find((tag) => obj[1] === tag);
       if (matchedTag) {
+        firstLineEnding = true;
         const thinkNode = getThinkNode.call(this);
         thinkNode.tagName = matchedTag;
+        thinkNode.properties.className = `${matchedTag}_content`;
         node.tagName = matchedTag;
       }
     } else if (node.tagName) {
@@ -65,7 +68,7 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
       value: '',
       tagName: '', // 将在解析标签序列时设置
       properties: {
-        classname: 'thinkContent'
+        // classname: ''
       },
       children: []
     };
@@ -75,6 +78,7 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
         meta: null,
         value: '',
         tagName: '',
+        properties: {},
         data: { hChildren: [code], value: '', loading: true }
       },
       token
@@ -130,6 +134,10 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
         properties: { className: ['think-br'] },
         children: []
       };
+      if (firstLineEnding) {
+        firstLineEnding = false;
+        return;
+      }
       const thinkNode = getThinkNode.call(this);
       thinkNode.children.push(code);
       thinkNode.value += value;
@@ -139,7 +147,6 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
 
   function handleThinkClose(token) {
     const node = this.stack[this.stack.length - 1];
-    // console.log('完整handleThinkClose', node);
     // const code = node.data.hChildren[0];
     // // 将数据作为文本节点添加到子元素的 children 中
     // code.children.push({ type: 'text', value: this.resume() });
