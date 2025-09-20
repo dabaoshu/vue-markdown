@@ -48,7 +48,10 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
       const matchedTag = tags.find((tag) => obj[1] === tag);
       if (matchedTag) {
         firstLineEnding = true;
+        /**标识元素体 */
+        node.data.hProperties['data-type-remarkThink'] = '';
         const thinkNode = getThinkNode.call(this);
+
         thinkNode.tagName = matchedTag;
         thinkNode.properties.className = `${matchedTag}_content`;
         node.tagName = matchedTag;
@@ -79,7 +82,13 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
         value: '',
         tagName: '',
         properties: {},
-        data: { hChildren: [code], value: '', loading: true }
+        data: {
+          hChildren: [code],
+          value: '',
+          loading: true,
+          hProperties: {},
+          // hName: 'thinkFlow'
+        }
       },
       token
     );
