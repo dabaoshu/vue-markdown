@@ -78,14 +78,15 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
     this.enter(
       {
         type: 'thinkFlow',
-        meta: null,
+        meta: {
+          loading: true
+        },
         value: '',
         tagName: '',
         properties: {},
         data: {
           hChildren: [code],
           value: '',
-          loading: true,
           hProperties: {},
           // hName: 'thinkFlow'
         }
