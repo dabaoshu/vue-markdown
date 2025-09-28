@@ -103,6 +103,7 @@ function post(hastTree, options) {
       children: hastTree.type === 'root' ? hastTree.children : [hastTree]
     } as any;
   }
+
   visit(hastTree, transform);
   return hastTree;
   function transform(node, index, parent) {
@@ -175,8 +176,8 @@ export function CreateVMarkdown(
   const processor = createProcessor(options);
   const file = createFile(options);
   const mdastTree = processor.parse(file);
-  let hastTree = processor.runSync(mdastTree, file);
 
+  let hastTree = processor.runSync(mdastTree, file);
   hastTree = post(hastTree, options);
 
   const tree = toJsxRuntime(hastTree, {
@@ -190,6 +191,7 @@ export function CreateVMarkdown(
     elementAttributeNameCase: 'html',
     ...jsxRuntime
   });
+
   return tree;
 }
 
