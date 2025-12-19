@@ -17,35 +17,24 @@
     </div>
     <!-- 裁剪区域 -->
     <div ref="cropperContainerRef" class="cropper-wrapper"> </div>
-
-    <div @click="handleComputedColor">图片处理</div>
-    <div class="cropper-wrapper">
-      <img :src="img2Src" alt="img2Src" />
-    </div>
-    <!-- 加载提示 -->
-    <div v-if="loading" class="loading-overlay">
-      <div class="loading-spinner"></div>
-      <p>正在处理图片...</p>
-    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
   import { ref, computed, onMounted, reactive, onBeforeUnmount } from 'vue';
   import Cropper from 'cropperjs';
-  import type { CropperImage } from 'cropperjs';
   import { getEdgeColor } from './edgeColor.js';
-  import bcg from './bcg2.jpg';
   import _ from 'lodash';
   /**
    * 组件属性定义
    */
   interface Props {
     /** 容器宽度 */
-    width?: string | number;
+    width?: number;
     /** 容器高度 */
-    height?: string | number;
-    /** 裁剪框的宽高比 */
+    height?: number;
+    /** 图片地址 */
+    src?: string;
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -62,11 +51,12 @@
     leftBox: null,
     rightBox: null
   });
-  const imageSrc = ref<string>('');
-  const img2Src = ref<string>('');
+  const imageSrc = ref<string>(props.src);
   const BoxbackgroundColor = ref<string[]>(['', '']);
   const backgroundColor = ref<string>('');
   const loading = ref<boolean>(false);
+  const MaxMatrix = ref<number[]>([]);
+  const initialCenterSize = ref('');
   let cropperInstance: Cropper | null = null;
   /** 复用的占位元素，用于计算变换后的边界矩形，避免每次克隆节点重新加载图片 */
   let placeholderElement: HTMLDivElement | null = null;
@@ -88,7 +78,6 @@
   }));
 
   onMounted(() => {
-    imageSrc.value = bcg;
     loading.value = true;
     // 初始化Cropper（ready回调中会再次提取颜色，确保使用Cropper处理后的图片）
     initCropper();
@@ -136,22 +125,15 @@
    * @param cropperCanvas - 画布容器
    * @returns 占位元素
    */
-  const getOrCreatePlaceholder = (
-    cropperImage: CropperImage,
-    cropperCanvas: HTMLElement
-  ): HTMLDivElement => {
-    if (!placeholderElement) {
-      // 创建占位元素，设置与图片相同的尺寸
-      placeholderElement = document.createElement('div');
-      placeholderElement.style.position = 'absolute';
-      placeholderElement.style.width = `${cropperImage.offsetWidth}px`;
-      placeholderElement.style.height = `${cropperImage.offsetHeight}px`;
-      placeholderElement.style.opacity = '0';
-      placeholderElement.style.pointerEvents = 'none';
-      placeholderElement.style.visibility = 'hidden';
-      cropperCanvas.appendChild(placeholderElement);
-    }
-    return placeholderElement;
+  const createPlaceholder = ({ offsetWidth, offsetHeight }) => {
+    // 创建占位元素，设置与图片相同的尺寸
+    placeholderElement = document.createElement('div');
+    placeholderElement.style.position = 'absolute';
+    placeholderElement.style.width = `${offsetWidth}px`;
+    placeholderElement.style.height = `${offsetHeight}px`;
+    placeholderElement.style.opacity = '0';
+    placeholderElement.style.pointerEvents = 'none';
+    placeholderElement.style.visibility = 'hidden';
   };
 
   const imgTransform = (e: CustomEvent) => {
@@ -160,48 +142,78 @@
     const cropperImage = cropperInstance.getCropperImage();
 
     // 使用占位元素替代克隆节点，避免重复加载图片资源
-    const placeholder = getOrCreatePlaceholder(cropperImage, cropperCanvas);
-    // 更新占位元素的尺寸（图片可能被缩放）
-    placeholder.style.width = `${cropperImage.offsetWidth}px`;
-    placeholder.style.height = `${cropperImage.offsetHeight}px`;
-    // 应用相同的变换矩阵
-    placeholder.style.transform = `matrix(${e.detail.matrix.join(',')})`;
-    // 获取变换后的边界矩形
-    const cropperImageRect = placeholder.getBoundingClientRect();
+    placeholderElement.style.width = `${cropperImage.offsetWidth}px`;
+    placeholderElement.style.height = `${cropperImage.offsetHeight}px`;
+    placeholderElement.style.transform = `matrix(${e.detail.matrix.join(',')})`;
 
+    const cropperImageRect = placeholderElement.getBoundingClientRect();
     // 得到图片在画布上的相对位置（优先计算，确保位置更新及时）
-    const imageRelativePos = getRelativePosition(
-      cropperImageRect,
-      cropperCanvasRect
-    );
-    // 限制上下高度
-    if (
-      cropperImageRect.top > cropperCanvasRect.top ||
-      cropperImageRect.bottom < cropperCanvasRect.bottom
-    ) {
-      e.detail.matrix[4] = e.detail.oldMatrix[4];
-      e.detail.matrix[5] = e.detail.oldMatrix[5];
-      // e.preventDefault();
-      return;
+
+    if (initialCenterSize.value === 'cover') {
+      // 限制缩放
+      if (e.detail.matrix[0] < MaxMatrix.value[0]) {
+        e.preventDefault();
+      }
+      if (
+        cropperImageRect.top - 1.2 > cropperCanvasRect.top ||
+        cropperImageRect.bottom + 1.2 < cropperCanvasRect.bottom
+      ) {
+        e.detail.matrix[5] = e.detail.oldMatrix[5];
+        e.preventDefault();
+      }
+    }
+
+    if (initialCenterSize.value === 'contain') {
+      if (
+        // 图片顶部在画布顶部之下，并且图片右侧在画布右侧之内
+        (cropperImageRect.top > cropperCanvasRect.top &&
+          cropperImageRect.right < cropperCanvasRect.right) ||
+        // 图片顶部在画布顶部之下,并且图片左侧在画布左侧之右，
+        (cropperImageRect.top > cropperCanvasRect.top &&
+          cropperImageRect.left > cropperCanvasRect.left) ||
+        // 或者图片右侧在画布右侧之内，并且图片底部在画布底部之上
+        (cropperImageRect.bottom < cropperCanvasRect.bottom &&
+          cropperImageRect.right < cropperCanvasRect.right) ||
+        // 或者图片底部在画布底部之上，并且图片左侧在画布左侧之右
+        (cropperImageRect.bottom < cropperCanvasRect.bottom &&
+          cropperImageRect.left > cropperCanvasRect.left)
+      ) {
+        if (
+          e.detail.matrix[0] === MaxMatrix.value[0] &&
+          e.detail.matrix[3] === MaxMatrix.value[3]
+        ) {
+          e.detail.matrix[5] = MaxMatrix.value[5];
+        } else if (e.detail.matrix[3] > MaxMatrix.value[3]) {
+          (e.target as HTMLElement).setAttribute(
+            'data-scale',
+            e.detail.matrix[3]
+          );
+          e.preventDefault();
+        } else {
+          // 阻止图片变换（例如拖拽、缩放），保证图片始终在画布内部
+          e.preventDefault();
+        }
+      }
     }
 
     // 限制左右位置
     //  左右位置需要加多50px作为缓冲边缘
-    const offiset = Math.max(130, Number(props.width) * 0.6);
+    const offset = props.width * 0.45;
+    const leftDiff = cropperImageRect.left - cropperCanvasRect.left > offset;
+    const rightDiff =
+      cropperCanvasRect.right - cropperImageRect.right - offset > 0;
 
-    if (
-      cropperImageRect.right + offiset <= cropperCanvasRect.right ||
-      cropperImageRect.left - offiset >= cropperCanvasRect.left
-    ) {
-      // console.log('攔截');
-      console.log('出現左右限制');
+    if (leftDiff || rightDiff) {
+      // 阻止图片变换（例如拖拽、缩放），保证图片始终在画布内部
       e.preventDefault();
     }
 
+    const imageRelativePos = getRelativePosition(
+      cropperImageRect,
+      cropperCanvasRect
+    );
+
     if (imageRelativePos.left > 0 || imageRelativePos.right < 0) {
-      console.log('出现边缘');
-      // 这里开始计算边缘色彩
-      console.log(styleState);
       handleComputedColor();
     }
   };
@@ -219,19 +231,9 @@
     const color = await getEdgeColor(canvas, { algorithm: 'median' });
 
     setBackgroundColor(color);
-    // 将canvas内容转换为blob对象，并下载为图片文件
-    canvas.toBlob((blob: Blob | null) => {
-      if (!blob) {
-        console.error('canvas转blob失败');
-        return;
-      }
-      // 创建一个临时的下载链接
-      const url = URL.createObjectURL(blob);
-      img2Src.value = url;
-    });
   };
 
-  const handleComputedColor = _.debounce(_handleComputedColor, 1500);
+  const handleComputedColor = _.debounce(_handleComputedColor, 500);
 
   /**
    * 初始化Cropper实例
@@ -256,11 +258,7 @@
         };
       });
     };
-    // 销毁旧实例
-    if (cropperInstance) {
-      cropperInstance.destroy();
-      cropperInstance = null;
-    }
+
     // 清理旧的占位元素matrix(0.123748, 0, 0, 0.123748, -402, -1225);
     //matrix(0, 0, 0, 0, 0, 0);
     if (placeholderElement && placeholderElement.parentNode) {
@@ -270,21 +268,15 @@
 
     const { image, height, width } = await queryImage(imageSrc.value);
 
-    const containerWidth = Number(props.width);
-    const containerHeight = Number(props.height);
-
-    const scaleHValue = containerHeight / height;
-    const scaleWValue = containerWidth / width;
-    const size = scaleHValue > scaleWValue ? 'cover' : 'contain';
-    console.log('image', image, height, width, size);
+    const scaleHValue = props.height / height;
+    const scaleWValue = props.width / width;
+    initialCenterSize.value = scaleHValue > scaleWValue ? 'cover' : 'contain';
     // 创建Cropper实例
     cropperInstance = new Cropper(image, {
       container: cropperContainerRef.value,
       template:
         '<cropper-canvas  style="height: 100%;" scale-step=0.03>' +
-        '<cropper-image scalable  translatable initial-center-size="' +
-        size +
-        '">' +
+        `<cropper-image scalable  translatable initial-center-size="${initialCenterSize.value}" >` +
         '</cropper-image>' +
         '<cropper-shade hide ></cropper-shade>' +
         '<cropper-selection initial-coverage="1" x="0" y="0" >' +
@@ -296,47 +288,32 @@
     try {
       const cropperImage = cropperInstance.getCropperImage();
       const cropperCanvas = cropperInstance.getCropperCanvas();
+      createPlaceholder(cropperImage);
+      cropperCanvas.appendChild(placeholderElement);
       // 等待图片加载完成
-      // transform: matrix(0.123748, 0, 0, 0.123748, -402, -1225.01);
-      // 将 props 的宽高转换为数字类型
-      console.log(
-        'props.height',
-        containerWidth / width,
-        containerHeight / height,
-        scaleHValue
-      );
+
       await cropperImage.$ready();
-      // const container = cropperCanvas.getBoundingClientRect();
-      // const { x, y } = cropperImage.getBoundingClientRect();
-      // const containerWidth = container.width;
-      // 计算缩放后的图片宽度
-      if (size === 'cover') {
-        cropperImage.$zoom(scaleHValue - 0.03);
-      }
-      if (size === 'contain') {
-        cropperImage.$zoom(scaleHValue + 0.1);
-      }
+      _handleComputedColor();
 
-      // 计算垂直居中所需的偏移量（高度已经填满，所以垂直偏移为0）
-      // const offsetY = 0;
+      const a = (e) => {
+        MaxMatrix.value = e.detail.matrix;
+      };
+      cropperImage.addEventListener('transform', a);
+      cropperCanvas.addEventListener('action', (e) => {
+        if (
+          initialCenterSize.value === 'contain' &&
+          e.detail.action === 'scale' &&
+          cropperImage.getAttribute('data-scale')
+        ) {
+          const dtScale = cropperImage.getAttribute('data-scale');
+          const newMaxMatrix = MaxMatrix.value;
+          newMaxMatrix[0] = Number(dtScale);
+          newMaxMatrix[3] = Number(dtScale);
+          cropperImage.$setTransform(newMaxMatrix);
+          cropperImage.removeAttribute('data-scale');
+        }
+      });
 
-      // 设置变换：缩放 + 水平居中
-      // $setTransform(a, b, c, d, e, f) 对应 CSS transform: matrix(a, b, c, d, e, f)
-      // a, d 是缩放值，e, f 是平移值
-      // cropperImage.$setTransform(
-      //   scaleValue,
-      //   0,
-      //   0,
-      //   scaleValue,
-      //   offsetX,
-      //   offsetY
-      // );
-      /** */
-      setTimeout(() => {
-        console.log('添加时间');
-
-        cropperImage.addEventListener('transform', imgTransform);
-      }, 2000);
       // 为 cropperImage 添加属性监听器，监听示例属性变化（如scale、rotate等）
       // 注意：具体可监听哪些属性，需参考 cropperImage 实现，这里以常见属性为例
       const observer = new MutationObserver((mutations) => {
@@ -355,8 +332,6 @@
               cropperImageRect,
               cropperCanvasRect
             );
-            console.log('imageRelativePos', imageRelativePos);
-
             updateBoxPositions(imageRelativePos, cropperCanvasRect);
           }
         });
@@ -365,9 +340,12 @@
         attributes: true
       });
 
-      // 错误处理建议：组件卸载时，应该移除监听器，防止内存泄漏
-      // 可以在 onBeforeUnmount 生命周期钩子中增加对应清理逻辑
-      loading.value = false;
+
+      setTimeout(() => {
+        cropperImage.removeEventListener('transform', a);
+        cropperImage.addEventListener('transform', imgTransform);
+        loading.value = false;
+      }, 300);
     } catch (error) {
       console.error('提取背景颜色失败:', error);
       loading.value = false;

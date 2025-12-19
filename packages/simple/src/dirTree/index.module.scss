@@ -1,0 +1,35 @@
+.breadcrumb_container {
+  padding: 8px 0;
+
+  .breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    &_item {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      color: #666;
+      cursor: pointer;
+      transition: color 0.2s ease;
+      &_name {
+        &:hover {
+          color: #1890ff;
+        }
+
+        &.active {
+          color: #1890ff;
+          font-weight: 500;
+          cursor: default;
+        }
+      }
+    }
+    &_separator {
+      margin: 0 8px;
+      color: #d9d9d9;
+    }
+  }
+}
