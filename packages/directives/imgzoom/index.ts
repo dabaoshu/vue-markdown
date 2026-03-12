@@ -13,7 +13,7 @@ function createIdDom(tag: string, id: string, innerText?: string) {
 }
 
 export interface GroupItem {
-  title?: string;
+  title?: string; 
   imgSrc: string;
 }
 

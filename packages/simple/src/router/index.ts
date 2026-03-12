@@ -29,9 +29,14 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../people/people.vue')
   },
   {
-    path: '/shuzhi',
+    path: '/chatfeed',
     name: 'Shuzhi',
-    component: () => import('../shuzhi/shuzhi.vue')
+    component: () => import('../shuzhi/chatfeed.vue')
+  },
+  {
+    path: '/chatfeedok',
+    name: 'Shuzhi',
+    component: () => import('../shuzhi/chatfeedok.vue')
   },
   {
     path: '/testlogin',
