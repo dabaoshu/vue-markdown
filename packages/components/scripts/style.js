@@ -4,49 +4,105 @@ import { promises as fs } from 'fs';
 import glob from 'fast-glob';
 import scss from 'sass';
 
-const sourceDir = resolve(__dirname, '..');
-//lib文件
-const targetLib = resolve(__dirname, '../dist/lib');
-//es文件
-const targetEs = resolve(__dirname, '../dist/es');
+// 定义路径常量
+const ROOT_DIR = resolve(__dirname, '..');
+const DIST_DIR = resolve(ROOT_DIR, 'dist');
+const LIB_DIR = resolve(DIST_DIR, 'lib');
+const ES_DIR = resolve(DIST_DIR, 'es');
+const SCSS_PATTERN = '**/*.scss';
+// 定义排除目录
+const EXCLUDE_DIRS = ['**/node_modules/**', '**/dist/**'];
 
+/**
+ * 复制SCSS文件到目标目录
+ * @param {string} sourceGlob - SCSS文件glob模式
+ * @param {string[]} ignorePatterns - 需要排除的glob模式
+ * @returns {Promise<void>}
+ */
+const copyScssFiles = async (sourceGlob, ignorePatterns) => {
+  console.log(`正在复制SCSS文件到构建目录...`);
+  await Promise.all([
+    cpy([sourceGlob], LIB_DIR, { ignore: ignorePatterns }),
+    cpy([sourceGlob], ES_DIR, { ignore: ignorePatterns })
+  ]);
+  console.log('✅ SCSS文件复制成功');
+};
 
+/**
+ * 编译SCSS文件为CSS并写入目标目录
+ * @param {string[]} scssFiles - SCSS文件路径列表
+ * @returns {Promise<void>}
+ */
+const compileScssFiles = async (scssFiles) => {
+  console.log(`找到 ${scssFiles.length} 个SCSS文件需要编译`);
+  const compileTasks = scssFiles.map(async (scssPath) => {
+    try {
+      const filePath = resolve(ROOT_DIR, scssPath);
+      const scssCode = await fs.readFile(filePath, 'utf-8');
 
-const srcDir = resolve(__dirname, './dist');
+      // 编译SCSS到CSS
+      const result = await scss.compileAsync(scssCode, {
+        loadPaths: [ROOT_DIR, dirname(filePath)]
+      });
+
+      // 获取对应的CSS路径
+      const cssPath = scssPath.replace('.scss', '.css');
+
+      // 将编译后的CSS写入对应目录
+      await Promise.all([
+        fs.writeFile(resolve(LIB_DIR, cssPath), result.css),
+        fs.writeFile(resolve(ES_DIR, cssPath), result.css)
+      ]);
+
+      console.log(`  - 编译成功: ${scssPath}`);
+      return scssPath;
+    } catch (error) {
+      console.error(`  - 编译失败: ${scssPath} - ${error.message}`);
+      throw error;
+    }
+  });
+
+  await Promise.all(compileTasks);
+  console.log('✅ SCSS文件编译成功');
+};
+
+/**
+ * 构建SCSS文件
+ * 1. 复制SCSS文件到目标目录
+ * 2. 编译SCSS文件为CSS
+ * 3. 将CSS写入到目标目录
+ */
 const buildScss = async () => {
+  try {
+    console.log('开始构建样式文件...');
+    // 1. 复制SCSS文件到目标目录
+    const scssSourceGlob = `${ROOT_DIR}/${SCSS_PATTERN}`;
+    await copyScssFiles(scssSourceGlob, EXCLUDE_DIRS);
 
-  const sourceDirScss = `${sourceDir}/**/*.scss`
-  console.log(sourceDirScss, targetLib);
-  const step1 = await cpy(sourceDirScss, targetLib);
-  debugger
-
-  console.log(targetEs, step1);
-
-  await cpy(sourceDirScss, targetEs);
-  console.log('copy scss success');
-
-  //获取打包后.less文件目录(lib和es一样)
-  const scssFiles = await glob('**/*.scss', { cwd: srcDir, onlyFiles: true });
-  console.log('scssFiles', `${sourceDir}/**/*.scss`);
-  //遍历含有less的目录
-  for (let path in scssFiles) {
-    const filePath = `${srcDir}/${scssFiles[path]}`;
-    //获取less文件字符串
-    const scssCode = await fs.readFile(filePath, 'utf-8');
-    //将less解析成css
-
-    const code = await scss.compileAsync(scssCode, {
-      //指定src下对应less文件的文件夹为目录
-      loadPaths: [srcDir, dirname(filePath)]
+    // 2. 查找并编译SCSS文件
+    const scssFiles = await glob(SCSS_PATTERN, {
+      cwd: ROOT_DIR,
+      onlyFiles: true,
+      ignore: EXCLUDE_DIRS
     });
-    console.log(code);
-    //拿到.css后缀path
-    const cssPath = scssFiles[path].replace('.less', '.css');
 
-    //将css写入对应目录
-    await fs.writeFile(resolve(targetLib, cssPath), code.css);
-    await fs.writeFile(resolve(targetEs, cssPath), code.css);
+    if (scssFiles.length === 0) {
+      console.log('没有找到需要编译的SCSS文件');
+      return;
+    }
+
+    // 3. 编译SCSS文件
+    await compileScssFiles(scssFiles);
+  } catch (error) {
+    console.error('构建样式文件失败:', error);
+    process.exit(1);
   }
 };
-scss.compileAsync;
-buildScss();
+
+// 执行构建
+buildScss()
+  .then(() => console.log('🎉 样式文件构建完成!'))
+  .catch((error) => {
+    console.error('样式构建过程中发生错误:', error);
+    process.exit(1);
+  });

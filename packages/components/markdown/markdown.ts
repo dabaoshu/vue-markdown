@@ -176,7 +176,7 @@ export function CreateVMarkdown(
   const processor = createProcessor(options);
   const file = createFile(options);
   const mdastTree = processor.parse(file);
-
+  
   let hastTree = processor.runSync(mdastTree, file);
   hastTree = post(hastTree, options);
 

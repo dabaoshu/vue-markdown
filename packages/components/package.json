@@ -1,8 +1,7 @@
 {
   "name": "@nnnb/markdown",
   "version": "0.1.0",
-  "module": "./dist/es/index.mjs",
-  "main": "./dist/lib/index.js",
+
   "scripts": {
     "build": "vite build",
     "build:style": "esno ./scripts/style"

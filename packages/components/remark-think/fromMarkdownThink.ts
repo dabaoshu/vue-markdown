@@ -16,7 +16,11 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
     enter: {
       [ThinkEvent.thinkFlow]: handleThinkOpen,
       [ThinkEvent.thinkFlowValue]: handlebuffer,
-      [ThinkEvent.thinkFlowFenceSequence]: handlebuffer
+      [ThinkEvent.thinkFlowFenceSequence]: handlebuffer,
+      // 行内 thinkText 的内容缓冲
+      thinkTextData: handlebuffer,
+      // 行内 <think>...</think> 的整体节点
+      thinkText: handleInlineThinkOpen
     },
     exit: {
       [ThinkEvent.thinkFlow]: handleThinkClose,
@@ -24,7 +28,9 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
       // [ThinkEvent.thinkFlowCloseFenceSequence]:
       //   handlethinkFlowCloseFenceSequence,
       [ThinkEvent.lineEnding]: handleLineEnding,
-      [ThinkEvent.thinkFlowFenceSequence]: handleThinkFenceClose
+      [ThinkEvent.thinkFlowFenceSequence]: handleThinkFenceClose,
+      thinkTextData: handleInlineThinkValueClose,
+      thinkText: handleInlineThinkClose
     }
   };
 
@@ -166,5 +172,48 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
     // code.children.push({ type: 'text', value: node.value || '' });
     this.exit(token);
     match = false;
+  }
+
+  /**
+   * 行内 thinkText 相关处理
+   * `<think>1</think>` 会被解析为一个行内 element 节点
+   */
+  function handleInlineThinkOpen(token) {
+    // 行内节点直接作为 element 插入，不包裹 thinkFlow
+    this.enter(
+      {
+        type: 'element',
+        meta: {
+          loading: true
+        },
+        value: '',
+        tagName: tags[0] || 'think',
+        properties: {
+          className: [`${tags[0] || 'think'}_content`]
+        },
+        children: []
+      },
+      token
+    );
+  }
+
+  function handleInlineThinkValueClose(token) {
+    this.resume();
+    const value = this.sliceSerialize(token);
+    const node = this.stack[this.stack.length - 1];
+    if (!node || node.type !== 'element') return;
+    node.children.push({
+      type: 'text',
+      value
+    });
+    node.value += value;
+  }
+
+  function handleInlineThinkClose(token) {
+    const node = this.stack[this.stack.length - 1];
+    if (node && node.type === 'element') {
+      node.meta.loading = false;
+    }
+    this.exit(token);
   }
 }
