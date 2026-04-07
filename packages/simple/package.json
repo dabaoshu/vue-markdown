@@ -21,6 +21,7 @@
     "@tntd/react-markdown-mermaid": "^0.0.1",
     "codemirror": "^6.0.1",
     "cropperjs": "^2.1.0",
+    "crypto-js": "^4.2.0",
     "element-plus": "^2.9.5",
     "hast-util-raw": "^9.1.0",
     "katex": "^0.16.11",

@@ -1,4 +1,8 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
+import {
+  createRouter,
+  createWebHistory,
+  type RouteRecordRaw
+} from 'vue-router';
 
 /**
  * 所有业务路由配置
@@ -28,15 +32,16 @@ const routes: RouteRecordRaw[] = [
     name: 'People',
     component: () => import('../people/people.vue')
   },
+
   {
-    path: '/chatfeed',
-    name: 'Shuzhi',
-    component: () => import('../shuzhi/chatfeed.vue')
+    path: '/audio-useAsr',
+    name: 'useAsr',
+    component: () => import('../shuzhi/audio-transcribe-demo2.vue')
   },
   {
-    path: '/chatfeedok',
-    name: 'Shuzhi',
-    component: () => import('../shuzhi/chatfeedok.vue')
+    path: '/audio-debug',
+    name: 'AudioDebug',
+    component: () => import('../shuzhi/audio-transcribe-demo.vue')
   },
   {
     path: '/testlogin',
@@ -55,7 +60,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/',
-    redirect: '/mdeditor'
+    redirect: '/chatfeedok'
   },
   {
     path: '/:pathMatch(.*)*',
@@ -74,5 +79,3 @@ export const router = createRouter({
 });
 
 export default router;
-
-
