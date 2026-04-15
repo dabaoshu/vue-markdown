@@ -506,6 +506,8 @@ export class AudioThresholdFilter {
         this.active &&
         now - this.lastActiveAt > this.config.silenceTimeoutMs
       ) {
+        /** 回落静音前补发 ringBuffer 尾帧，避免句尾 PCM 滞留导致 ASR 结果滞后。 */
+        this.flushBuffer(volume);
         this.active = false;
         this.hooks.onStateChange?.({ isActive: false, volume });
       }

@@ -223,8 +223,8 @@ export const useAsr = ({
         filter.value = new AudioThresholdFilter(
           {
             threshold: 0.011,
-            bufferMs: 260,
-            silenceTimeoutMs: 100,
+            bufferMs: 170,
+            silenceTimeoutMs: 400,
             autoGainControl: false,
             noiseSuppression: true,
             echoCancellation: true,
