@@ -1,34 +1,66 @@
 {
   "name": "@nnnb/markdown",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "module": "./dist/es/index.mjs",
   "main": "./dist/lib/index.js",
-  
+  "types": "./dist/es/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/es/index.d.ts",
+      "import": "./dist/es/index.mjs",
+      "require": "./dist/lib/index.js"
+    },
+    "./vue-ui": {
+      "types": "./dist/es/vue-ui.d.ts",
+      "import": "./dist/es/vue-ui.mjs",
+      "require": "./dist/lib/vue-ui.js"
+    }
+  },
   "scripts": {
     "build": "vite build",
     "build:style": "esno ./scripts/style"
   },
   "dependencies": {
-    "develop": "^1.0.0",
     "devlop": "^1.1.0",
-    "esno": "^4.7.0",
     "hast-util-to-html": "^9.0.1",
     "hast-util-to-jsx-runtime": "^2.3.0",
-    "highlight.js": "^11.10.0",
     "html-url-attributes": "^3.0.0",
-    "refractor": "^4.8.1",
-    "rehype-stringify": "^10.0.0",
-    "rehype-vue": "^1.0.5",
+    "mermaid": "^11.12.0",
+    "micromark-factory-space": "^2.0.1",
+    "micromark-util-character": "^2.1.1",
+    "micromark-util-symbol": "^2.0.1",
     "remark-parse": "^11.0.0",
-    "remark-rehype": "^11.1.0",
+    "remark-rehype": "^11.0.0",
     "unified": "^11.0.5",
     "unist-util-visit": "^5.0.0",
-    "vfile": "^6.0.2",
+    "vfile": "^6.0.0",
     "vue-jsx-runtime": "^0.1.0"
   },
+  "peerDependencies": {
+    "highlight.js": "^11.0.0",
+    "lodash": "^4.17.0",
+    "refractor": "^4.0.0",
+    "rehype-katex": "^7.0.0",
+    "remark-math": "^6.0.0",
+    "vue": "^3.0.0"
+  },
   "devDependencies": {
+    "hast": "^9.0.0",
     "cpy": "^11.1.0",
+    "esno": "^4.7.0",
     "fast-glob": "^3.3.2",
-    "vite-plugin-dts": "1.4.1"
-  }
+    "highlight.js": "^11.10.0",
+    "lodash": "^4.17.21",
+    "micromark-util-types": "^2.0.1",
+    "refractor": "^4.8.1",
+    "rehype-katex": "^7.0.0",
+    "remark-math": "^6.0.0",
+    "vite-plugin-dts": "1.4.1",
+    "vue": "^3.4.0"
+  },
+  "files": [
+    "dist/",
+    "package.json",
+    "README.md"
+  ]
 }
