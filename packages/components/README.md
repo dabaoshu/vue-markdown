@@ -175,7 +175,10 @@ $$
 
 ## Code Highlight Component
 
-A Vue component that provides syntax highlighting for code blocks using two rendering engines: highlight.js and refractor.
+Code highlight is now split into engine layer and UI layer:
+
+- Engine exports (framework-agnostic): `@nnnb/markdown`
+- Vue UI exports: `@nnnb/markdown/vue-ui`
 
 ### Features
 
@@ -188,11 +191,11 @@ A Vue component that provides syntax highlighting for code blocks using two rend
 
 ```vue
 <template>
-  <Highlighter :language="language" :code="code" :autoMatch="false" />
+  <CodeHighLight :language="language" :code="code" :autoMatch="false" />
 </template>
 
 <script setup>
-import { Highlighter } from '@nnnb/markdown';
+import { CodeHighLight } from '@nnnb/markdown/vue-ui';
 import 'highlight.js/styles/atom-one-dark.css';
 
 const language = 'javascript';
@@ -206,7 +209,7 @@ You can use any highlight.js style by importing the corresponding CSS file.
 
 ```vue
 <template>
-  <Highlighter 
+  <CodeHighLight 
     generatorType="refractor"
     :language="language" 
     :code="code" 
@@ -215,7 +218,7 @@ You can use any highlight.js style by importing the corresponding CSS file.
 </template>
 
 <script setup>
-import { Highlighter } from '@nnnb/markdown';
+import { CodeHighLight } from '@nnnb/markdown/vue-ui';
 
 const language = 'javascript';
 const code = 'const greeting = "Hello World!";';
@@ -223,6 +226,12 @@ const customTheme = {
   // Your custom theme styles
 };
 </script>
+```
+
+### Engine-only Usage
+
+```ts
+import { highlightTohtml, refractorToHtml } from '@nnnb/markdown';
 ```
 
 ### Props

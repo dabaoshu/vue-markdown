@@ -1,4 +1,4 @@
-import { CSSProperties } from 'vue';
+import type { CSSProperties } from 'vue';
 
 const style: { [key: string]: CSSProperties } = {
   'code[class*=language-]': {

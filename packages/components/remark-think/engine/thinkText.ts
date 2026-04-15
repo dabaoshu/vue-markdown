@@ -1,47 +1,38 @@
-import { Construct, Effects, State } from 'micromark-util-types';
 import { markdownLineEnding } from 'micromark-util-character';
-import { codes, types, values } from 'micromark-util-symbol';
-import type { ThinkFlowOption } from './type';
+import { codes, types } from 'micromark-util-symbol';
+import type { Construct, Effects, State } from 'micromark-util-types';
+import { getStrCode } from '../core/tag-code';
+import type { ThinkFlowOption } from '../core/type';
+import { normalizeThinkOptions } from '../core/options';
 
-// 获取单个字符对应的 micromark code
-const getStrCode = (str: string) => {
-  const key = Object.keys(values).find((key) => values[key] === str);
-  // 动态索引 micromark 内部常量，运行时安全，这里做一次类型断言绕过 TS 限制
-  return (codes as any)[key];
-};
-
+/**
+ * 创建行内 think 语法解析构造器。
+ *
+ * @param options 插件配置。
+ * @returns micromark 构造器。
+ */
 export function thinkText(options?: ThinkFlowOption): Construct {
-  const { tags = ['think'] } = options || {};
-
-  if (!Array.isArray(tags)) {
-    throw new Error('tags must be an array of strings');
-  }
-  if (tags.some((tag) => typeof tag !== 'string')) {
-    throw new Error('All tags must be strings');
-  }
+  const { tags } = normalizeThinkOptions(options);
 
   return {
     tokenize: tokenizeThinkText,
-    resolve: resolveThinkText, // 用于处理和清理从tokenize函数产生的事件列表
+    resolve: resolveThinkText, // 用于处理和清理从 tokenize 函数产生的事件列表
     previous,
     name: 'thinkText'
   };
 
   function tokenizeThinkText(effects: Effects, ok: State, nok: State): State {
     // 保存上下文和状态变量
-    // const self = this;
-    /** 当前正在匹配的标签 */
     let currentTag = '';
-    /** 已经完整匹配到的标签 */
     let matchedTag = '';
 
-    return start; // 返回初始状态函数
+    return start;
 
     function start(code: number): State {
       // 检查开始标签 <tag>
       if (code !== codes.lessThan) return nok(code); // 如果不是 '<' 字符,返回失败
-      (effects as any).enter('thinkText'); // 进入整个 think 标签的 token,包含开始标签、内容和结束标签
-      (effects as any).enter('thinkTextSequence'); // 进入 think 标签的开始标签序列 token,只包含 <tag> 这部分
+      (effects as any).enter('thinkText'); // 进入整个 think 标签 token
+      (effects as any).enter('thinkTextSequence'); // 进入 think 标签开始序列 token
       effects.consume(code); // 消费当前字符
       return tagStart; // 进入 tagStart 状态
     }
@@ -65,12 +56,11 @@ export function thinkText(options?: ThinkFlowOption): Construct {
         return nok(code);
       }
 
-      // 继续匹配当前标签
       const nextIndex = matchedTag.length;
+      // 继续匹配当前标签
       if (code === getStrCode(currentTag[nextIndex])) {
         effects.consume(code);
         matchedTag += currentTag[nextIndex];
-        // 标签匹配完成，期待 '>'
         if (matchedTag.length === currentTag.length) {
           return expectClosingBracket;
         }
@@ -96,7 +86,6 @@ export function thinkText(options?: ThinkFlowOption): Construct {
 
       // 检查结束标签开始
       if (code === codes.lessThan) {
-        // 如果是 '<' 字符
         (effects as any).enter('thinkTextSequence');
         return closeTagStart;
       }
@@ -134,12 +123,14 @@ export function thinkText(options?: ThinkFlowOption): Construct {
         return between(code);
       }
 
-      effects.consume(code); // 消费内容字符
+      // 消费内容字符
+      effects.consume(code);
       return data;
     }
 
     function closeTagStart(code: number): State {
-      effects.consume(code); // 已经消费 '<'
+      // 已经消费 '<'
+      effects.consume(code);
       return closeTagSlash;
     }
 
@@ -179,16 +170,18 @@ export function thinkText(options?: ThinkFlowOption): Construct {
   }
 }
 
-/** @type {Resolver} */
+/**
+ * 规范化行内 think token 事件序列，合并相邻文本/空白片段。
+ *
+ * @param events micromark 事件列表。
+ * @returns 处理后的事件列表。
+ */
 function resolveThinkText(events) {
   let tailExitIndex = events.length - 4;
   let headEnterIndex = 3;
-  /** @type {number} */
   let index;
-  /** @type {number | undefined} */
   let enter;
 
-  // 处理开始和结束的空格
   if (
     (events[headEnterIndex][1].type === types.lineEnding ||
       events[headEnterIndex][1].type === 'space') &&
@@ -208,7 +201,6 @@ function resolveThinkText(events) {
     }
   }
 
-  // 合并相邻的空格和数据
   index = headEnterIndex - 1;
   tailExitIndex++;
 
@@ -241,13 +233,14 @@ function resolveThinkText(events) {
 }
 
 /**
- * @this {TokenizeContext}
- * @type {Previous}
+ * 判断前一个字符是否允许进入行内 think 解析。
+ *
+ * @param code 当前字符码。
+ * @returns 是否允许匹配 thinkText。
  */
 function previous(code) {
-  // 检查是否是转义的开始标签
   return (
-    code !== 60 || // '<'
+    code !== 60 ||
     this.events[this.events.length - 1][1].type === types.characterEscape
   );
 }

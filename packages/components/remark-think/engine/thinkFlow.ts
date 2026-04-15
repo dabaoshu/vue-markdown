@@ -1,26 +1,18 @@
-import { factorySpace } from 'micromark-factory-space'; // 用于处理空格
-import { markdownLineEnding } from 'micromark-util-character'; // 用于判断行结束
-import { codes, constants, types, values } from 'micromark-util-symbol'; // 常量和类型定义
-import { ThinkEvent } from './type';
+import { factorySpace } from 'micromark-factory-space';
+import { markdownLineEnding } from 'micromark-util-character';
+import { codes, constants, types } from 'micromark-util-symbol';
+import { getStrCode } from '../core/tag-code';
+import { normalizeThinkOptions } from '../core/options';
+import { ThinkEvent } from '../core/type';
 
-const getStrCode = (str) => {
-  const key = Object.keys(values).find((key) => values[key] === str);
-  return codes[key];
-};
 /**
- * 导出 thinkFlow 构造器
- * tokenize: 用于解析标记的函数
- * concrete: 表示这是一个具体的语法结构
- * name: 构造器名称
+ * 创建块级 think 语法解析构造器。
+ *
+ * @param options 插件配置。
+ * @returns micromark 构造器。
  */
 export const thinkFlow = (options?) => {
-  const { tags = ['think'] } = options || {};
-  if (!Array.isArray(tags)) {
-    throw new Error('tags must be an array of strings');
-  }
-  if (tags.some((tag) => typeof tag !== 'string')) {
-    throw new Error('All tags must be strings');
-  }
+  const { tags } = normalizeThinkOptions(options);
 
   return {
     tokenize: tokenizeThinkFenced,
@@ -30,9 +22,10 @@ export const thinkFlow = (options?) => {
 
   /**
    * 主要的标记解析函数
-   * @param effects - 用于生成标记的工具
-   * @param ok - 解析成功时的回调
-   * @param nok - 解析失败时的回调
+   *
+   * @param effects 用于生成标记的工具
+   * @param ok 解析成功时的回调
+   * @param nok 解析失败时的回调
    */
   function tokenizeThinkFenced(effects, ok, nok) {
     const self = this;
@@ -130,7 +123,6 @@ export const thinkFlow = (options?) => {
         // - after: 如果失败,进入结束处理
         return effects.attempt(nonLazyContinuation, beforeContent, after)(code);
       }
-
       // 如果既不是文件结束也不是换行,则解析失败
       return nok(code);
     }
@@ -174,11 +166,10 @@ export const thinkFlow = (options?) => {
       }
 
       if (markdownLineEnding(code)) {
-        // console.log('markdownLineEnding_enter', code);
         // 尝试匹配非懒惰的继续标记，如果成功则进入 beforeContent 处理，否则进入 after 处理
         return effects.attempt(nonLazyContinuation, beforeContent, after)(code);
       }
-      effects.enter(ThinkEvent['thinkFlowValue']);
+      effects.enter(ThinkEvent.thinkFlowValue);
       return contentChunk(code);
     }
 
@@ -188,7 +179,7 @@ export const thinkFlow = (options?) => {
      */
     function contentChunk(code) {
       if (code === codes.eof || markdownLineEnding(code)) {
-        effects.exit(ThinkEvent['thinkFlowValue']);
+        effects.exit(ThinkEvent.thinkFlowValue);
         return beforeContentChunk(code);
       }
       effects.consume(code);
@@ -291,31 +282,24 @@ export const thinkFlow = (options?) => {
   }
 };
 
-/**
- * 非懒惰延续构造器
- * 用于处理多行内容
- */
 const nonLazyContinuation = {
   tokenize: tokenizeNonLazyContinuation,
   partial: true
 };
 
 /**
- * 处理多行内容的延续
- * 确保内容可以跨越多行
+ * 非懒惰延续构造器
+ * 用于处理多行内容
  */
 function tokenizeNonLazyContinuation(effects, ok, nok) {
   const self = this;
   return start;
 
   /**
-   * 开始处理新行
-   */
-  /**
    * 处理新行的开始
-   * @param code - 当前字符的 ASCII 码
-   * @returns 如果遇到文件结束返回 ok，否则处理换行并进入 lineStart 状态
    *
+   * @param code 当前字符的 ASCII 码
+   * @returns 如果遇到文件结束返回 ok，否则处理换行并进入 lineStart 状态
    * 这个函数主要做以下几件事:
    * 1. 检查是否到达文件末尾(code === null)，如果是则结束解析
    * 2. 处理换行符:
@@ -330,17 +314,13 @@ function tokenizeNonLazyContinuation(effects, ok, nok) {
     if (code === null) {
       return ok(code);
     }
-    // console.log('expected eol');
     effects.enter(ThinkEvent.lineEnding);
     effects.consume(code);
     effects.exit(ThinkEvent.lineEnding);
     return lineStart;
   }
 
-  /**
-   * 处理行开始
-   * 检查是否是懒惰模式
-   */
+  
   /**
    * 处理行开始的函数
    * @param code - 当前字符的 ASCII 码
@@ -352,7 +332,7 @@ function tokenizeNonLazyContinuation(effects, ok, nok) {
    * 这里检查 parser.lazy 中当前行的标记来判断是否处于懒惰模式。
    * 如果是懒惰模式，说明内容块应该在此中断，返回 nok 结束解析。
    * 如果不是懒惰模式，则返回 ok 继续解析后续内容。
-   */
+  */
   function lineStart(code) {
     return self.parser.lazy[self.now().line] ? nok(code) : ok(code);
   }
