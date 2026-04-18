@@ -1,4 +1,4 @@
-import { computed, defineComponent, h, PropType } from 'vue';
+import { computed, defineComponent, PropType } from 'vue';
 import { getCodeClassName, highlightTohtml, refractorToHtml } from '../engine';
 import type { CodeHighlightGeneratorType } from '../core';
 
@@ -62,11 +62,10 @@ export const CodeHighLight = defineComponent({
     };
   },
   render() {
-    return h('pre', {}, [
-      h('code', {
-        class: this.className,
-        innerHTML: this.highlightedCode
-      })
-    ]);
+    return (
+      <pre>
+        <code class={this.className} v-html={this.highlightedCode}></code>
+      </pre>
+    );
   }
 });

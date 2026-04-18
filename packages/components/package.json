@@ -6,6 +6,21 @@
     "build": "vite build",
     "build:style": "esno ./scripts/style"
   },
+  "module": "./dist/es/index.mjs",
+  "main": "./dist/lib/index.js",
+  "types": "./dist/es/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/es/index.d.ts",
+      "import": "./dist/es/index.mjs",
+      "require": "./dist/lib/index.js"
+    },
+    "./vue-ui": {
+      "types": "./dist/es/vue-ui.d.ts",
+      "import": "./dist/es/vue-ui.mjs",
+      "require": "./dist/lib/vue-ui.js"
+    }
+  },
   "dependencies": {
     "devlop": "^1.1.0",
     "hast-util-to-html": "^9.0.1",
