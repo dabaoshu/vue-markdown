@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "vite"
+    "dev": "pnpm --filter @nnnb/simple dev"
   },
   "dependencies": {
     "@vitejs/plugin-vue-jsx": "^4.0.0",
