@@ -17,8 +17,10 @@ export const highlightTohtml = (
   const autoDetect = autoMatch || !language;
 
   if (language && !hljs.getLanguage(language)) {
-    console.warn(`The language "${language}" you specified could not be found.`);
-    return escapeHtml(code);
+    console.error(
+      `The language "${language}" you specified could not be found.`
+    );
+    return escapeHtml(code || '');
   }
 
   if (autoDetect) {
