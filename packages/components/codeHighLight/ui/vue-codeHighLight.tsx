@@ -42,6 +42,11 @@ export const CodeHighLight = defineComponent({
     });
 
     const highlightedCode = computed(() => {
+      if (!props.code) {
+        return '';
+      }
+
+
       if (props.generatorType === 'highlight') {
         return highlightTohtml(props.code, {
           autoMatch: props.autoMatch,

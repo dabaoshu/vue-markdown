@@ -55,6 +55,7 @@ export interface RenderTaskOptions {
 export class RenderTimingController {
   private delayTimer: ReturnType<typeof setTimeout> | null = null;
   private minTimer: ReturnType<typeof setTimeout> | null = null;
+  private streamGraceRetryTimer: ReturnType<typeof setTimeout> | null = null;
   private debouncedTask: ReturnType<typeof debounce<() => void>> | null = null;
   private lastChangedAt = 0;
 
@@ -85,11 +86,22 @@ export class RenderTimingController {
   }
 
   /**
+   * 清理流式宽限重试定时器。
+   * @returns {void}
+   */
+  private clearStreamGraceRetryTimer() {
+    if (!this.streamGraceRetryTimer) return;
+    clearTimeout(this.streamGraceRetryTimer);
+    this.streamGraceRetryTimer = null;
+  }
+
+  /**
    * 统一执行渲染任务（防抖 + 遮罩时序）。
    * @param options 渲染任务参数
    * @returns {void}
    */
   render(options: RenderTaskOptions) {
+    this.clearStreamGraceRetryTimer();
     this.clearDebounce();
     const waitMs = Math.max(0, options.debounceMs);
     const runTask = async () => {
@@ -174,12 +186,45 @@ export class RenderTimingController {
   }
 
   /**
+   * 计算当前流式错误宽限剩余时长。
+   * @param graceMs 宽限时长（毫秒）
+   * @returns {number} 剩余毫秒数（最小为 0）
+   */
+  getStreamGraceRemainingMs(graceMs: number) {
+    const safeGraceMs = Math.max(0, graceMs);
+    const elapsedMs = Date.now() - this.lastChangedAt;
+    return Math.max(0, safeGraceMs - elapsedMs);
+  }
+
+  /**
+   * 在流式错误宽限期结束后触发一次重试回调。
+   * @param graceMs 宽限时长（毫秒）
+   * @param isCancelled 外部取消条件（如组件卸载）
+   * @param onRetry 宽限到期后执行的重试逻辑
+   * @returns {void}
+   */
+  scheduleStreamGraceRetry(
+    graceMs: number,
+    isCancelled: () => boolean,
+    onRetry: () => void
+  ) {
+    this.clearStreamGraceRetryTimer();
+    const remainingMs = this.getStreamGraceRemainingMs(graceMs);
+    this.streamGraceRetryTimer = setTimeout(() => {
+      this.streamGraceRetryTimer = null;
+      if (isCancelled()) return;
+      onRetry();
+    }, remainingMs);
+  }
+
+  /**
    * 销毁控制器并清理全部任务。
    * @returns {void}
    */
   dispose() {
     this.clearDebounce();
     this.clearOverlayTimers();
+    this.clearStreamGraceRetryTimer();
   }
 }
 
