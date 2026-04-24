@@ -1,52 +1,49 @@
 # 按需引入指南
 
-为了减少应用程序的最终打包体积，你可以按需引入 `@nnnb/markdown` 的组件和功能。以下是几种不同的引入方式，按照打包体积从小到大排序。
+为了减少应用最终体积，建议按“引擎能力”和“Vue UI 能力”分开引入：
+
+- 引擎能力（无框架绑定）：`@nnnb/markdown`
+- Vue UI 能力（组件）：`@nnnb/markdown/vue-ui`
 
 ## 1. 基础 Markdown 组件（最小体积）
 
-如果你只需要基础的 Markdown 渲染功能，不需要代码高亮和数学公式支持：
+如果你只需要 Markdown 渲染组件：
 
 ```js
-import { VueMarkdown } from '@nnnb/markdown/markdown';
+import { VueMarkdown } from '@nnnb/markdown/vue-ui';
 ```
 
-这样只会引入基础的 Markdown 解析和渲染功能。
+这会使用 Vue UI 入口，不额外引入你未使用的插件能力。
 
 ## 2. 带代码高亮的 Markdown 组件
 
-如果你需要代码高亮功能：
+如果你需要代码高亮：
 
 ```js
-// 引入组件
-import { VueMarkdown } from '@nnnb/markdown/markdown';
-import { HighlightOptions } from '@nnnb/markdown/codeHighLight';
-
-// 引入高亮样式（可选择喜欢的主题）
+import { VueMarkdown } from '@nnnb/markdown/vue-ui';
+import { CodeHighLight } from '@nnnb/markdown/vue-ui';
 import 'highlight.js/styles/github.css';
 ```
 
-然后在组件中配置：
+在 `VueMarkdown` 的 `components` 中注入：
 
 ```vue
 <template>
-  <VueMarkdown 
+  <VueMarkdown
     :source="markdownContent"
-    :components="{ 
-      code: (props) => <code class="hljs-code" {...props} />
-    }"
+    :components="{ code: CodeHighLight }"
   />
 </template>
 ```
 
 ## 3. 带数学公式支持的 Markdown 组件
 
-如果你需要数学公式支持：
+如果你需要 KaTeX 数学公式支持：
 
 ```js
-import { VueMarkdown } from '@nnnb/markdown/markdown';
+import { VueMarkdown } from '@nnnb/markdown/vue-ui';
 import 'katex/dist/katex.min.css';
 
-// 在组件中使用
 const mathOptions = {
   strict: true,
   remarkOptions: {},
@@ -64,15 +61,24 @@ const mathOptions = {
 
 ## 4. 完整功能（最大体积）
 
-如果你需要所有功能：
+如果你需要 markdown + 高亮 + 数学公式：
 
 ```js
-import { VueMarkdown } from '@nnnb/markdown';
+import { VueMarkdown } from '@nnnb/markdown/vue-ui';
+import { CodeHighLight } from '@nnnb/markdown/vue-ui';
 import 'highlight.js/styles/github.css';
 import 'katex/dist/katex.min.css';
 ```
 
-## 优化依赖体积的建议
+## 5. 仅使用引擎能力（无 UI）
+
+如果你只需要插件或引擎函数：
+
+```ts
+import { rehypeMermaid, highlightTohtml, refractorToHtml } from '@nnnb/markdown';
+```
+
+## 体积优化建议
 
 1. **Tree-shaking**：确保你的构建工具支持 tree-shaking，以剔除未使用的代码
    
@@ -91,6 +97,6 @@ import 'katex/dist/katex.min.css';
    };
    ```
 
-4. **分离代码**：将 markdown 渲染功能与其他功能分离到不同的包中，以便按需加载
+4. **分层引入**：优先从 `@nnnb/markdown` 引入引擎能力，只有需要 Vue 组件时再引入 `@nnnb/markdown/vue-ui`
 
 使用这些策略，你可以显著减少最终打包的体积，提高应用程序的加载性能。 
