@@ -108,6 +108,12 @@ export const MermaidBlock = defineComponent({
       required: false,
       default: 'mermaid-block'
     },
+    /** 是否正在加载 检测是否闭合 fence */
+    streamLoading: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
     loadingText: {
       type: String,
       required: false,
@@ -375,6 +381,12 @@ export const MermaidBlock = defineComponent({
     });
 
     return () => {
+      // console.log('vue-mermaidBlock', chartId.value, {
+      //   renderSvg: props.renderSvg,
+      //   showLoading: props.showLoading,
+      //   loading: loading.value
+      // });
+      console.log('vue-mermaidBlock props.loadin', props.streamLoading);
       if (props.renderSvg === false) {
         return (
           <div class={`${props.className} mermaid-block--source`}>

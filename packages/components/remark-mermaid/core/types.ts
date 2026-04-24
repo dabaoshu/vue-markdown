@@ -59,6 +59,8 @@ export interface MermaidBlockProps extends MermaidRenderOptions {
   id?: string;
   /** 外层 class */
   className?: string;
+  /** 是否正在加载 检测是否闭合 fence */
+  streamLoading?: boolean;
 }
 
 /**

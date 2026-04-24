@@ -52,6 +52,14 @@ function createProcessor(options: MarkdownOptions) {
     .use(remarkParse)
     .use(remarkPlugins)
     .use(remarkRehype, remarkRehypeOptions)
+    .use(function attachMarkdownSourceToTree() {
+      return (tree: any, file: VFile) => {
+        if (!tree || typeof tree !== 'object') return;
+        const root = tree as { data?: Record<string, unknown> };
+        root.data = root.data || {};
+        root.data.markdownSource = String(file.value || '');
+      };
+    })
     .use(rehypePlugins);
   // 创建处理器并配置插件链
 

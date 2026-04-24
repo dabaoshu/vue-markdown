@@ -19,6 +19,8 @@ export interface ReplaceCodeFenceContext {
   meta: string;
   /** 稳定 cacheKey */
   cacheKey: string;
+  /** 当前代码块是否仍在流式输入中（未完整闭合 fence） */
+  streamLoading: boolean;
 }
 
 /**
@@ -176,6 +178,59 @@ export function matchCodeFenceLanguage(
 }
 
 /**
+ * 获取节点位置信息中的偏移量
+ * @param {Element} node 节点
+ * @returns {{start?: number; end?: number}} 位置信息
+ */
+function getNodeOffsets(node: Element): { start?: number; end?: number } {
+  const position = (node as any).position;
+  return {
+    start: position?.start?.offset,
+    end: position?.end?.offset
+  };
+}
+
+/**
+ * 判断代码 fence 是否完整闭合
+ * @param {Element} preNode pre 节点
+ * @param {string} source markdown 原文
+ * @returns {boolean} 是否完整闭合
+ */
+export function isCodeFenceClosed(preNode: Element, source: string): boolean {
+  if (!source) return true;
+  const { start, end } = getNodeOffsets(preNode);
+  if (typeof start !== 'number' || typeof end !== 'number' || end <= start) {
+    return true;
+  }
+
+  const blockSource = source.slice(start, end);
+  if (!blockSource) return true;
+  const normalizedBlock = blockSource.replace(/\r\n/g, '\n');
+  const lines = normalizedBlock.split('\n');
+  const openerLine = lines[0] || '';
+  const openerMatch = openerLine.match(/^\s{0,3}(`{3,}|~{3,})/);
+  if (!openerMatch) return true;
+
+  const openerFence = openerMatch[1];
+  const fenceChar = openerFence[0];
+  const fenceLength = openerFence.length;
+  let lastMeaningfulLine = '';
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    if (lines[i].trim()) {
+      lastMeaningfulLine = lines[i];
+      break;
+    }
+  }
+  if (!lastMeaningfulLine) return false;
+
+  const escapedFenceChar = fenceChar === '`' ? '\\`' : '\\~';
+  const closingPattern = new RegExp(
+    `^\\s{0,3}${escapedFenceChar}{${fenceLength},}\\s*$`
+  );
+  return closingPattern.test(lastMeaningfulLine);
+}
+
+/**
  * 将指定语言代码块替换为组件节点
  * @param {Root} tree hast 树
  * @param {ReplaceCodeFenceToComponentOptions} options 替换参数
@@ -185,6 +240,7 @@ export function replaceCodeFenceToComponent(
   tree: Root,
   options: ReplaceCodeFenceToComponentOptions
 ): void {
+  const markdownSource = String((tree as any)?.data?.markdownSource || '');
   visit(tree, 'element', (node: Element, index, parent: any) => {
     if (!parent || typeof index !== 'number') return;
     if (node.tagName !== 'pre') return;
@@ -207,6 +263,7 @@ export function replaceCodeFenceToComponent(
         meta
       })
     );
+    const streamLoading = !isCodeFenceClosed(node, markdownSource);
 
     const context: ReplaceCodeFenceContext = {
       preNode: node,
@@ -215,15 +272,20 @@ export function replaceCodeFenceToComponent(
       normalizedCode,
       matchedLanguage,
       meta,
-      cacheKey
+      cacheKey,
+      streamLoading
     };
 
     if (options.shouldReplace && !options.shouldReplace(context)) return;
 
+    const customProperties = options.buildProperties(context);
     parent.children[index] = {
       type: 'element',
       tagName: options.tagName,
-      properties: options.buildProperties(context),
+      properties: {
+        streamLoading,
+        ...customProperties
+      },
       children: []
     };
     (parent.children[index] as any).position = (node as any).position;

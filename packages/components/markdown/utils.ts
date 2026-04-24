@@ -2,7 +2,7 @@ import rehypeKatex, { Options as RehypeKatexOptions } from 'rehype-katex';
 import remarkMath, { Options as RemarkMathOptions } from 'remark-math';
 import flow from 'lodash/flow';
 import { remarkThink } from '../remark-think';
-import type { ThinkFlowOption } from '../remark-think/type';
+import type { ThinkFlowOption } from '../remark-think/core/type';
 
 export const preprocessLaTeX = (content: string) => {
   if (typeof content !== 'string') return content;
