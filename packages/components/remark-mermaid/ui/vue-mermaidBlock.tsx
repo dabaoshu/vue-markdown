@@ -386,7 +386,6 @@ export const MermaidBlock = defineComponent({
       //   showLoading: props.showLoading,
       //   loading: loading.value
       // });
-      console.log('vue-mermaidBlock props.loadin', props.streamLoading);
       if (props.renderSvg === false) {
         return (
           <div class={`${props.className} mermaid-block--source`}>
