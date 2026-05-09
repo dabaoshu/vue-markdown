@@ -1,332 +1,335 @@
 <template>
   <div class="markdown-editor">
     <div class="toolbar">
-      <div v-for="(item, index) in toolbarItems" :key="index" class="toolbar-item" :title="item.tooltip"
-        @click="item.action()">
-        <span class="toolbar-icon">{{ item.icon }}</span>
+      <div
+        class="toolbar-item"
+        title="用当前 Tab 的示例覆盖编辑器内容"
+        @click="resetDemoForActiveTab"
+      >
+        <span class="toolbar-icon">重置示例</span>
       </div>
-      <div class="toolbar-item" @click="togglePreview" :title="showPreview ? '隐藏预览' : '显示预览'">
+      <div
+        class="toolbar-item"
+        @click="togglePreview"
+        :title="showPreview ? '隐藏预览' : '显示预览'"
+      >
         <span class="toolbar-icon">
           {{ showPreview ? '隐藏预览' : '显示预览' }}
         </span>
       </div>
+      <div
+        class="toolbar-item"
+        @click="toggleStreamTest"
+        :title="isStreaming ? '停止流式输出测试' : '开始流式输出测试'"
+      >
+        <span class="toolbar-icon">
+          {{ isStreaming ? '停止流式' : '流式测试' }}
+        </span>
+      </div>
     </div>
-    <div class="editor-container">
-      <Codemirror v-model="code" placeholder="请输入Markdown内容..." :style="{ height: '400px' }" :autofocus="true"
-        :indent-with-tab="true" :tab-size="2" :extensions="extensions" @ready="handleReady" @change="handleChange" />
-    </div>
-    <div class="preview-container" v-if="showPreview">
-      <div class="preview-title">预览</div>
-      <VueMarkdown class="preview-content" :source="code"></VueMarkdown>
+    <DemoTabsPanel v-model="activeDemoTab" :tabs="demoTabList" />
+
+    <p class="demo-tabs-hint">
+      左栏：切换 Tab 载入示例，并在下方编辑 Markdown；右栏：实时预览（与项目内
+      VueMarkdown 配置一致）。可点「隐藏预览」单栏编辑。
+    </p>
+    <div
+      class="editor-layout"
+      :class="{ 'editor-layout--single': !showPreview }"
+    >
+      <!-- 左侧：分类 Tab、工具栏、源码编辑 -->
+      <div class="editor-pane">
+        <div class="toolbar">
+          <div
+            v-for="(item, index) in toolbarItems"
+            :key="index"
+            class="toolbar-item"
+            :title="item.tooltip"
+            @click="item.action()"
+          >
+            <span class="toolbar-icon">{{ item.icon }}</span>
+          </div>
+        </div>
+        <div class="editor-container">
+          <div class="editor-codemirror" dir="ltr">
+            <Codemirror
+              v-model="code"
+              placeholder="请输入Markdown内容..."
+              :style="{ height: editorHeight }"
+              :autofocus="true"
+              :indent-with-tab="true"
+              :tab-size="2"
+              :extensions="extensions"
+              @ready="handleReady"
+              @change="handleChange"
+            />
+          </div>
+        </div>
+      </div>
+      <!-- 右侧：渲染预览 -->
+      <div v-if="showPreview" class="preview-pane">
+        <div class="preview-title">预览</div>
+        <div class="preview-scroll">
+          <VueMarkdown class="preview-content" :source="code"></VueMarkdown>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, shallowRef, onMounted, computed, onBeforeUnmount } from 'vue';
-import { Codemirror } from 'vue-codemirror';
-import { markdown } from '@codemirror/lang-markdown';
-import { EditorView, keymap } from '@codemirror/view';
-import { defaultKeymap, indentWithTab } from '@codemirror/commands';
-import VueMarkdown from '../components/markdown';
-import { EditorHelper } from './editorHelper';
-const formItems = `
-  `;
-// 编辑器视图引用
-const editorView = shallowRef();
-// 编辑器内容
-//   const code = ref(`
-// <think>
-//   qqqq12312312312312
-// </think>
-// <think>
-//   qqqq1312312
-// </think>
-// <think>
-//   qqqq312321312
-// </think>
-// # 4646546
-// # 44
-// 444
-//   `);
-const code = ref(`
-# Template Form Example
-:::form
-\`\`\`json 
-[
-  {
-    "templateType": "VkfInput",
-    "label": "姓名",
-    "prop": "name"
-  },
-  {
-    "templateType": "VkfSwitch",
-    "label": "是否喜欢",
-    "prop": "like"
-  },
-  {
-    "label": "满意度",
-    "prop": "degree",
-    "templateType": "VkfSlider",
-    "min": 0,
-    "max": 100
-  },
-  {
-    "templateIf": "return data.like",
-    "label": "原因",
-    "templateType": "VkfInput",
-    "prop": "reason"
+  import { ref, shallowRef, onMounted, onBeforeUnmount, watch } from 'vue';
+  import { Codemirror } from 'vue-codemirror';
+  import { markdown } from '@codemirror/lang-markdown';
+  import { EditorView, keymap } from '@codemirror/view';
+  import { defaultKeymap, indentWithTab } from '@codemirror/commands';
+  import VueMarkdown from '../components/markdown';
+  import { EditorHelper } from './editorHelper';
+  import { DEMO_MARKDOWN, demoTabList, type DemoTabId } from './demoData';
+  import { useStreamPlayback } from '../hooks/useStreamPlayback';
+  import { createShortcuts, createToolbarItems } from './editorActions';
+  import DemoTabsPanel from './DemoTabsPanel.vue';
 
+  const activeDemoTab = ref<DemoTabId>('diagrams');
+  /** 编辑器高度：左栏为纵向 flex 时填充满剩余区域 */
+  const editorHeight = ref('100%');
+
+  /** 编辑器视图引用 */
+  const editorView = shallowRef();
+  /** 编辑器内容 */
+  const code = ref(DEMO_MARKDOWN.diagrams);
+
+  /** 是否显示预览 */
+  const showPreview = ref(true);
+  /** 编辑器助手实例 */
+  const editorHelper = new EditorHelper();
+  const {
+    isStreaming,
+    startStreamTest,
+    stopStreamTest,
+    toggleStreamTest: _toggleStreamTest
+  } = useStreamPlayback({
+    chunkSize: 6,
+    intervalMs: 400,
+    onChunk: (chunk: string) => {
+      code.value += chunk;
+    }
+  });
+
+  const toggleStreamTest = () => {
+    if (isStreaming.value) {
+      stopStreamTest();
+    } else {
+      const currentCode = code.value;
+      code.value = '';
+
+      startStreamTest(currentCode);
+    }
+  };
+
+  /**
+   * 强制编辑区从左到右排版（避免父级 dir 或强 RTL 字符影响光标与换行）
+   */
+  const ltrEditorTheme = EditorView.theme({
+    '&': { direction: 'ltr' },
+    '.cm-scroller': { direction: 'ltr' },
+    '.cm-content': { direction: 'ltr', unicodeBidi: 'plaintext' },
+    '.cm-gutters': { direction: 'ltr' }
+  });
+
+  /** 编辑器扩展 */
+  const extensions = [
+    markdown(),
+    EditorView.lineWrapping,
+    ltrEditorTheme,
+    keymap.of([indentWithTab, ...defaultKeymap])
+  ];
+
+  /** 将当前 Tab 的示例重新写入编辑器 */
+  function resetDemoForActiveTab() {
+    code.value = DEMO_MARKDOWN[activeDemoTab.value];
   }
-]
-\`\`\`
-:::
-`);
 
-// code.value= `
+  /** 与 activeDemoTab 保持内容一致（含 v-model 程序化变更） */
+  watch(activeDemoTab, (id) => {
+    if (DEMO_MARKDOWN[id]) {
+      code.value = DEMO_MARKDOWN[id];
+    }
+  });
 
-
-// 行内：这是 <think>1</think> 行内 think 标签。
-// `
-// 是否显示预览
-const showPreview = ref(true);
-// 编辑器助手实例
-const editorHelper = new EditorHelper();
-
-// 编辑器扩展
-const extensions = [
-  markdown(),
-  EditorView.lineWrapping,
-  keymap.of([indentWithTab, ...defaultKeymap])
-];
-
-// 编辑器就绪回调
-function handleReady(payload: any) {
-  editorView.value = payload.view;
-  editorHelper.setEditorView(payload.view);
-}
-
-// 编辑器内容变化回调
-function handleChange(value: string) {
-  code.value = value;
-}
-
-// 切换预览
-function togglePreview() {
-  showPreview.value = !showPreview.value;
-}
-
-// 工具栏配置
-const toolbarItems = computed(() => [
-  {
-    icon: 'H1',
-    tooltip: '一级标题',
-    action: () => editorHelper.insertText('# ', 2)
-  },
-  {
-    icon: 'H2',
-    tooltip: '二级标题',
-    action: () => editorHelper.insertText('## ', 3)
-  },
-  {
-    icon: 'B',
-    tooltip: '粗体',
-    action: () =>
-      editorHelper.toggleStyle({
-        startMark: '**',
-        useSymmetricMarks: true,
-        canToggle: true
-      })
-  },
-  {
-    icon: 'I',
-    tooltip: '斜体',
-    action: () =>
-      editorHelper.toggleStyle({
-        startMark: '_',
-        useSymmetricMarks: true,
-        canToggle: true
-      })
-  },
-  {
-    icon: '~',
-    tooltip: '删除线',
-    action: () =>
-      editorHelper.toggleStyle({
-        startMark: '~~',
-        useSymmetricMarks: true,
-        canToggle: true
-      })
-  },
-  {
-    icon: '[L]',
-    tooltip: '链接',
-    action: () =>
-      editorHelper.toggleStyle({
-        startMark: '[',
-        endMark: '](url)',
-        defaultText: '[链接文字](url)',
-        canToggle: true
-      })
-  },
-  {
-    icon: '![I]',
-    tooltip: '图片',
-    action: () =>
-      editorHelper.toggleStyle({
-        startMark: '![',
-        endMark: '](url)',
-        defaultText: '![图片描述](url)',
-        canToggle: true
-      })
-  },
-  {
-    icon: '`',
-    tooltip: '代码',
-    action: () =>
-      editorHelper.toggleStyle({
-        startMark: '`',
-        useSymmetricMarks: true,
-        canToggle: true
-      })
-  },
-  {
-    icon: '```',
-    tooltip: '代码块',
-    action: () =>
-      editorHelper.toggleStyle({
-        startMark: '```\n',
-        endMark: '\n```',
-        defaultText: '```\n代码\n```',
-        canToggle: true
-      })
-  },
-  {
-    icon: '>',
-    tooltip: '引用',
-    action: () => editorHelper.insertText('> ', 2)
-  },
-  {
-    icon: '•',
-    tooltip: '无序列表',
-    action: () => editorHelper.insertText('- ', 2)
-  },
-  {
-    icon: '1.',
-    tooltip: '有序列表',
-    action: () => editorHelper.insertText('1. ', 3)
+  /** 编辑器就绪回调 */
+  function handleReady(payload: any) {
+    editorView.value = payload.view;
+    editorHelper.setEditorView(payload.view);
   }
-]);
 
-// 快捷键配置
-const shortcuts = {
-  b: () =>
-    editorHelper.toggleStyle({
-      startMark: '**',
-      useSymmetricMarks: true,
-      canToggle: true
-    }),
-  i: () =>
-    editorHelper.toggleStyle({
-      startMark: '_',
-      useSymmetricMarks: true,
-      canToggle: true
-    }),
-  k: () =>
-    editorHelper.toggleStyle({
-      startMark: '[',
-      endMark: '](url)',
-      defaultText: '[链接文字](url)',
-      canToggle: true
-    })
-};
+  /** 编辑器内容变化回调 */
+  function handleChange(value: string) {
+    code.value = value;
+  }
 
-// 监听快捷键
-onMounted(() => {
-  window.addEventListener('keydown', (e) =>
-    editorHelper.handleKeydown(e, shortcuts)
-  );
-});
+  /** 切换预览 */
+  function togglePreview() {
+    showPreview.value = !showPreview.value;
+  }
 
-onBeforeUnmount(() => {
-  window.removeEventListener('keydown', (e) =>
-    editorHelper.handleKeydown(e, shortcuts)
-  );
-});
+  /** 工具栏配置 */
+  const toolbarItems = createToolbarItems(editorHelper);
+  /** 快捷键配置 */
+  const shortcuts = createShortcuts(editorHelper);
+
+  /**
+   * 全局快捷键分发（需具名函数以便移除监听）
+   * @param e 键盘事件
+   */
+  function onGlobalKeydown(e: KeyboardEvent) {
+    editorHelper.handleKeydown(e, shortcuts);
+  }
+
+  onMounted(() => {
+    window.addEventListener('keydown', onGlobalKeydown);
+  });
+
+  onBeforeUnmount(() => {
+    window.removeEventListener('keydown', onGlobalKeydown);
+    stopStreamTest();
+  });
 </script>
 
 <style scoped>
-.markdown-editor {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  overflow: hidden;
-}
+  .markdown-editor {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+    height: min(88vh, 920px);
+    min-height: 480px;
+    background: #fff;
+  }
 
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  padding: 8px;
-  background-color: #f5f5f5;
-  border-bottom: 1px solid #ddd;
-}
+  /** 左右主布局：左编辑、右预览 */
+  .editor-layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
 
-.toolbar-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 32px;
-  min-width: 32px;
-  margin-right: 8px;
-  margin-bottom: 4px;
-  padding: 0 8px;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
+  .editor-layout--single .editor-pane {
+    border-right: none;
+  }
 
-.toolbar-item:hover {
-  background-color: #e0e0e0;
-}
+  /** 左侧栏：纵向堆叠 Tab → 工具栏 → CodeMirror */
+  .editor-pane {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #e0e0e0;
+  }
 
-.toolbar-icon {
-  font-size: 14px;
-}
+  /** 右侧栏：预览区独立滚动 */
+  .preview-pane {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 16px 16px;
+    background-color: #fafafa;
+    overflow: hidden;
+  }
 
-.editor-container {
-  flex: 1;
-  min-height: 200px;
-  border-bottom: 1px solid #ddd;
-}
+  .toolbar {
+    flex-shrink: 0;
+    display: flex;
+    flex-wrap: wrap;
+    padding: 8px;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+  }
 
-.preview-container {
-  padding: 16px;
-  background-color: #fff;
-}
+  .toolbar-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    min-width: 32px;
+    margin-right: 8px;
+    margin-bottom: 4px;
+    padding: 0 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
 
-.preview-title {
-  font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 8px;
-  color: #333;
-}
+  .toolbar-item:hover {
+    background-color: #e0e0e0;
+  }
 
-.preview-content {
-  min-height: 200px;
-  padding: 8px;
-  border: 1px solid #eee;
-  border-radius: 4px;
-}
+  .toolbar-icon {
+    font-size: 14px;
+  }
 
-:deep(.cm-editor) {
-  height: 100%;
-}
+  .editor-container {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
 
-:deep(.cm-scroller) {
-  overflow: auto;
-  font-family: Consolas, Monaco, 'Andale Mono', monospace;
-  font-size: 14px;
-  line-height: 1.5;
-}
+  /** 让 vue-codemirror 根节点参与 flex 撑满左栏剩余高度 */
+  .editor-codemirror {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .preview-title {
+    flex-shrink: 0;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+  }
+
+  .preview-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  .preview-content {
+    min-height: 120px;
+    padding: 8px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    background: #fff;
+  }
+
+  :deep(.cm-editor) {
+    height: 100%;
+    flex: 1;
+    min-height: 0;
+    direction: ltr;
+    text-align: left;
+  }
+
+  :deep(.cm-scroller) {
+    overflow: auto;
+    direction: ltr;
+    font-family: Consolas, Monaco, 'Andale Mono', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  :deep(.cm-content) {
+    direction: ltr;
+    unicode-bidi: plaintext;
+  }
+
+  :deep(.cm-line) {
+    direction: ltr;
+    text-align: left;
+  }
 </style>

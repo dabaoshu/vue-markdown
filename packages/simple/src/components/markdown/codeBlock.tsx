@@ -3,7 +3,6 @@ import { CodeHighLight } from '@nnnb/markdown';
 import './styles/codeLight.scss';
 import styles from './index.module.scss';
 import { defineComponent } from 'vue';
-// console.log(dracula);
 
 export const CodeBlock = defineComponent({
   name: 'CodeBlock',
@@ -30,7 +29,7 @@ export const CodeBlock = defineComponent({
               <span>复制</span>
             </div>
           </div>
-
+          
           <CodeHighLight
             language={language}
             code={children}

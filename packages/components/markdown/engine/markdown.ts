@@ -1,5 +1,8 @@
 import { unreachable } from 'devlop';
-import { Options as JsxRuntimeOption, toJsxRuntime } from 'hast-util-to-jsx-runtime';
+import {
+  Options as JsxRuntimeOption,
+  toJsxRuntime
+} from 'hast-util-to-jsx-runtime';
 import { urlAttributes } from 'html-url-attributes';
 import remarkParse from 'remark-parse';
 import remarkRehype, { Options as RemarkRehypeOptions } from 'remark-rehype';
@@ -126,8 +129,8 @@ export function postProcessHast(hastTree: any, options: MarkdownOptions): any {
       let remove = allowedElements
         ? !allowedElements.includes(node.tagName)
         : disallowedElements
-          ? disallowedElements.includes(node.tagName)
-          : false;
+        ? disallowedElements.includes(node.tagName)
+        : false;
 
       if (!remove && allowElement && typeof index === 'number') {
         remove = !allowElement(node, index, parent);
@@ -159,6 +162,9 @@ export function CreateVMarkdown(
   const processor = createProcessor(options);
   const file = createFile(options);
   const mdastTree = processor.parse(file);
+  processor.run(mdastTree, file).then((res) => {
+    console.log('mdastTree', res);
+  });
 
   let hastTree = processor.runSync(mdastTree, file);
   hastTree = postProcessHast(hastTree, options);

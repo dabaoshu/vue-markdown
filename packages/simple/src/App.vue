@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h1>Vue Markdown Demo</h1>
+    <h4>Vue Markdown Demo</h4>
     <router-view />
   </div>
 </template>
