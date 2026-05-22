@@ -23,7 +23,7 @@ export const CodeBlock = defineComponent({
         (slots.default()[0].children as string);
       return !inline && match ? (
         <div class={styles['code-block']}>
-          <div class={styles['code-block-header']}>
+          <div class={styles['code-block-header']} data-export-ignore>
             <div class={styles['code-language']}>{language}</div>
             <div class={styles['copy-button']}>
               <span>复制</span>

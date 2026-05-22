@@ -11,6 +11,7 @@ import ThinkElement, {
   MergeThinkRemark,
   thinkGroupElementt
 } from './thinkElement';
+import '../../../../components/markdown/markdown.module.scss';
 
 export default defineComponent({
   name: 'VueMarkdown',

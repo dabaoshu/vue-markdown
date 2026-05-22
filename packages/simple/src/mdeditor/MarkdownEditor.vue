@@ -26,6 +26,22 @@
           {{ isStreaming ? '停止流式' : '流式测试' }}
         </span>
       </div>
+      <div
+        class="toolbar-item"
+        :class="{ 'toolbar-item--disabled': !showPreview || exportBusy }"
+        title="将右侧预览区截图导出为 PDF"
+        @click="handleExportPdf"
+      >
+        <span class="toolbar-icon">{{ exportBusy ? '导出中…' : '导出 PDF' }}</span>
+      </div>
+      <div
+        class="toolbar-item"
+        :class="{ 'toolbar-item--disabled': !showPreview || exportBusy }"
+        title="将右侧预览区截图导出为 PNG 长图"
+        @click="handleExportPng"
+      >
+        <span class="toolbar-icon">{{ exportBusy ? '导出中…' : '导出 PNG' }}</span>
+      </div>
     </div>
     <DemoTabsPanel v-model="activeDemoTab" :tabs="demoTabList" />
 
@@ -70,7 +86,9 @@
       <div v-if="showPreview" class="preview-pane">
         <div class="preview-title">预览</div>
         <div class="preview-scroll">
-          <VueMarkdown class="preview-content" :source="code"></VueMarkdown>
+          <MarkdownExportHost ref="exportHostRef" class="preview-content">
+            <VueMarkdown :source="code"></VueMarkdown>
+          </MarkdownExportHost>
         </div>
       </div>
     </div>
@@ -84,6 +102,10 @@
   import { EditorView, keymap } from '@codemirror/view';
   import { defaultKeymap, indentWithTab } from '@codemirror/commands';
   import VueMarkdown from '../components/markdown';
+  import {
+    MarkdownExportHost,
+    type MarkdownExportHostExpose
+  } from '@nnnb/markdown/vue-ui';
   import { EditorHelper } from './editorHelper';
   import { DEMO_MARKDOWN, demoTabList, type DemoTabId } from './demoData';
   import { useStreamPlayback } from '../hooks/useStreamPlayback';
@@ -101,6 +123,10 @@
 
   /** 是否显示预览 */
   const showPreview = ref(true);
+  /** 导出进行中 */
+  const exportBusy = ref(false);
+  /** 导出宿主 ref */
+  const exportHostRef = ref<MarkdownExportHostExpose | null>(null);
   /** 编辑器助手实例 */
   const editorHelper = new EditorHelper();
   const {
@@ -171,6 +197,52 @@
   /** 切换预览 */
   function togglePreview() {
     showPreview.value = !showPreview.value;
+  }
+
+  /**
+   * 导出 PDF
+   */
+  async function handleExportPdf() {
+    if (!showPreview.value || exportBusy.value || !exportHostRef.value) return;
+    exportBusy.value = true;
+    try {
+      const target = exportHostRef.value.getTarget();
+      if (!target) throw new Error('导出容器未就绪');
+      await exportHostRef.value.exportPdf(`markdown-${activeDemoTab.value}`, {
+        capture: {
+          width: Math.ceil(target.getBoundingClientRect().width),
+          syncStyles: true
+        }
+      });
+    } catch (error) {
+      console.error('[MarkdownEditor] 导出 PDF 失败', error);
+      window.alert('导出 PDF 失败，请确认预览区已渲染完成');
+    } finally {
+      exportBusy.value = false;
+    }
+  }
+
+  /**
+   * 导出 PNG
+   */
+  async function handleExportPng() {
+    if (!showPreview.value || exportBusy.value || !exportHostRef.value) return;
+    exportBusy.value = true;
+    try {
+      const target = exportHostRef.value.getTarget();
+      if (!target) throw new Error('导出容器未就绪');
+      await exportHostRef.value.exportPng(`markdown-${activeDemoTab.value}`, {
+        capture: {
+          width: Math.ceil(target.getBoundingClientRect().width),
+          syncStyles: true
+        }
+      });
+    } catch (error) {
+      console.error('[MarkdownEditor] 导出 PNG 失败', error);
+      window.alert('导出 PNG 失败，请确认预览区已渲染完成');
+    } finally {
+      exportBusy.value = false;
+    }
   }
 
   /** 工具栏配置 */
@@ -266,6 +338,12 @@
     background-color: #e0e0e0;
   }
 
+  .toolbar-item--disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
   .toolbar-icon {
     font-size: 14px;
   }
@@ -305,6 +383,11 @@
     border: 1px solid #eee;
     border-radius: 4px;
     background: #fff;
+    box-sizing: border-box;
+  }
+
+  .preview-content.is-export-capturing {
+    overflow: visible !important;
   }
 
   :deep(.cm-editor) {

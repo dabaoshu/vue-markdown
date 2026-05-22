@@ -194,6 +194,24 @@ export const MermaidBlock = defineComponent({
 
     const normalizedCode = computed(() => (props.code || '').trim());
 
+    /** 导出等待：流式 / 遮罩 / 宽限期 */
+    const isExportLoading = computed(
+      () =>
+        props.streamLoading ||
+        loading.value ||
+        streamPending.value
+    );
+
+    /**
+     * 导出就绪：非 loading 且（无需 SVG / 已有 SVG / 错误态 / 空代码）
+     */
+    const isExportReady = computed(() => {
+      if (isExportLoading.value) return false;
+      if (props.renderSvg === false) return true;
+      if (!normalizedCode.value) return true;
+      return !!svgHtml.value || !!errorMessage.value;
+    });
+
     const ensureMermaidInitialized = () => {
       const merged = {
         /**
@@ -388,7 +406,10 @@ export const MermaidBlock = defineComponent({
       // });
       if (props.renderSvg === false) {
         return (
-          <div class={`${props.className} mermaid-block--source`}>
+          <div
+            class={`${props.className} mermaid-block--source`}
+            data-export-ready='true'
+          >
             <pre>
               <code>{normalizedCode.value}</code>
             </pre>
@@ -402,6 +423,10 @@ export const MermaidBlock = defineComponent({
             loading.value && props.showLoading ? ' loading' : ''
           }`}
           style={{ position: 'relative' }}
+          {...(isExportLoading.value
+            ? { 'data-export-loading': '' }
+            : {})}
+          data-export-ready={isExportReady.value ? 'true' : 'false'}
         >
           {loading.value && props.showLoading ? (
             <div

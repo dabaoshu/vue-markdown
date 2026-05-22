@@ -25,6 +25,8 @@
   },
   "peerDependencies": {
     "highlight.js": "^11.0.0",
+    "html2canvas": "^1.4.0",
+    "jspdf": "^2.5.0",
     "lodash": "^4.17.0",
     "refractor": "^4.0.0",
     "rehype-katex": "^7.0.0",
@@ -39,6 +41,8 @@
     "esno": "^4.7.0",
     "fast-glob": "^3.3.2",
     "highlight.js": "^11.10.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.2",
     "lodash": "^4.17.21",
     "micromark-util-types": "^2.0.1",
     "refractor": "^4.8.1",
