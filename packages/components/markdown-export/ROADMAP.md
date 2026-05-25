@@ -21,22 +21,20 @@ waitForDomStable → prepareDomForCapture → captureDom → PDF / PNG
 ```
 markdown-export/
 ├── core/
-│   ├── types.ts                 # DomExportOptions、CaptureOptions
+│   ├── types.ts                 # 导出类型定义
 │   ├── selectors.ts             # data-export-* 选择器常量
-│   ├── cropCanvas.ts            # Canvas 裁剪
-│   └── exportCaptureStyles.ts   # clone 文档修正 CSS
+│   └── pdfPagination.ts         # PDF 布局 / 智能分页 / 切片 / 生成
 ├── engine/
 │   ├── waitForDomStable.ts      # 等待字体/图片/异步组件
 │   ├── prepareDomForCapture.ts  # 锁定宽度、解除 scroll 约束
 │   ├── inlineCloneStyles.ts     # 镜像计算样式到 clone
-│   ├── injectExportStyles.ts    # 注入导出修正样式
-│   ├── captureDom.ts            # html2canvas 截图
-│   ├── canvasToPdf.ts           # 长图 → 多页 PDF
+│   ├── captureDom.ts            # html2canvas 截图 + clone 修正样式
 │   ├── downloadBlob.ts          # 下载 / 剪贴板
-│   └── exportFromDom.ts         # 统一入口
+│   └── exportFromDom.ts         # 截图流水线 / 预览 / 导出入口
 ├── ui/
 │   ├── MarkdownExportHost.tsx   # 导出 DOM 宿主
-│   └── ExportToolbar.tsx        # 导出按钮组
+│   ├── ExportToolbar.tsx        # 导出按钮组
+│   └── ExportPreviewModal.tsx   # PDF 分页预览弹层
 ├── index.ts                     # 引擎导出入口
 ├── vue-ui.ts                    # Vue UI 导出入口
 ├── readme.md                    # 使用说明
@@ -57,7 +55,7 @@ markdown-export/
 | 入口 | 内容 |
 |------|------|
 | `@nnnb/markdown` | `exportFromDom`、`waitForDomStable`、`captureDom` |
-| `@nnnb/markdown/vue-ui` | `MarkdownExportHost`、`ExportToolbar` |
+| `@nnnb/markdown/vue-ui` | `MarkdownExportHost`、`ExportToolbar`、`ExportPreviewModal` |
 
 ## 三、阶段规划
 
@@ -88,6 +86,8 @@ markdown-export/
 | clone 注入导出修正 CSS | ✅ |
 | simple 引入 `markdown.module.scss` | ✅ |
 | 代码块 `data-export-ignore` 隐藏工具栏 | ✅ |
+| PDF 分页预览（所见即所导） | ✅ |
+| PDF 分页可配置（纸张/边距/模式） | ✅ |
 | 超长文档分段截图（防内存溢出） | ⬜ |
 | 导出进度 / 错误 UI 组件化 | ⬜ |
 | KaTeX 公式字体专项规则 | ⬜ |
@@ -228,7 +228,7 @@ stateDiagram-v2
 
 ```
 Phase 0  DOM 截图 MVP              ✅ 完成
-Phase 1  样式一致性优化             🔄 进行中（~60%）
+Phase 1  样式一致性优化             🔄 进行中（~70%）
 Phase 2  语法扩展 + 业务集成        ⬜ 未开始
 Phase 3  生产化 + 高级能力          ⬜ 未开始
 ```
@@ -256,7 +256,7 @@ Phase 3  生产化 + 高级能力          ⬜ 未开始
 整体进度  ████████░░░░░░░░░░░░  ~40%
 
 P0 导出 MVP     ████████████████████  100%
-P1 样式一致     ████████████░░░░░░░░   60%
+P1 样式一致     ██████████████░░░░░░   70%
 P2 语法/集成    ░░░░░░░░░░░░░░░░░░░░    0%
 P3 生产化       ░░░░░░░░░░░░░░░░░░░░    0%
 ```
@@ -265,7 +265,7 @@ P3 生产化       ░░░░░░░░░░░░░░░░░░░░ 
 
 1. KaTeX / Element Plus 专项样式镜像规则
 2. 超长文档分段截图算法
-3. `ExportToolbar` 导出进度与错误提示
+3. `ExportToolbar` 导出进度提示（预览已完成）
 4. `waitForDomStable`、`canvasToPdf` 单元测试
 
 ---

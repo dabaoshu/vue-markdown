@@ -3,9 +3,13 @@ import {
   exportDomAsPdf,
   exportDomAsPng,
   exportFromDom,
-  type DomExportOptions,
-  type ExportResult
+  previewFromDom
 } from '../engine/exportFromDom';
+import type {
+  DomExportOptions,
+  ExportPreviewResult,
+  ExportResult
+} from '../core/types';
 
 type ExportExtraOptions = Omit<
   DomExportOptions,
@@ -18,6 +22,11 @@ type ExportExtraOptions = Omit<
 export interface MarkdownExportHostExpose {
   /** 获取导出容器 DOM */
   getTarget: () => HTMLElement | null;
+  /** 生成 PDF 分页预览（不下载） */
+  previewPdf: (
+    filename?: string,
+    options?: ExportExtraOptions
+  ) => Promise<ExportPreviewResult>;
   /** 导出 PDF */
   exportPdf: (
     filename?: string,
@@ -49,34 +58,35 @@ export const MarkdownExportHost = defineComponent({
 
     const getTarget = () => rootRef.value;
 
-    const exportPdf = (filename?: string, options?: ExportExtraOptions) => {
+    const requireTarget = (): HTMLElement => {
       const target = rootRef.value;
       if (!target) {
-        return Promise.reject(new Error('MarkdownExportHost: 容器尚未挂载'));
+        throw new Error('MarkdownExportHost: 容器尚未挂载');
       }
-      return exportDomAsPdf(target, filename, options);
+      return target;
+    };
+
+    const previewPdf = (filename?: string, options?: ExportExtraOptions) => {
+      return previewFromDom(requireTarget(), options);
+    };
+
+    const exportPdf = (filename?: string, options?: ExportExtraOptions) => {
+      return exportDomAsPdf(requireTarget(), filename, options);
     };
 
     const exportPng = (filename?: string, options?: ExportExtraOptions) => {
-      const target = rootRef.value;
-      if (!target) {
-        return Promise.reject(new Error('MarkdownExportHost: 容器尚未挂载'));
-      }
-      return exportDomAsPng(target, filename, options);
+      return exportDomAsPng(requireTarget(), filename, options);
     };
 
     const exportMarkdown = (
       options: Omit<DomExportOptions, 'target'>
     ): Promise<ExportResult> => {
-      const target = rootRef.value;
-      if (!target) {
-        return Promise.reject(new Error('MarkdownExportHost: 容器尚未挂载'));
-      }
-      return exportFromDom({ ...options, target });
+      return exportFromDom({ ...options, target: requireTarget() });
     };
 
     expose({
       getTarget,
+      previewPdf,
       exportPdf,
       exportPng,
       export: exportMarkdown

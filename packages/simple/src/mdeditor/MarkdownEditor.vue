@@ -28,7 +28,15 @@
       </div>
       <div
         class="toolbar-item"
-        :class="{ 'toolbar-item--disabled': !showPreview || exportBusy }"
+        :class="{ 'toolbar-item--disabled': !showPreview || exportBusy || previewBusy }"
+        title="预览导出 PDF 分页效果（所见即所导）"
+        @click="handlePreviewPdf"
+      >
+        <span class="toolbar-icon">{{ previewBusy ? '预览中…' : '预览 PDF' }}</span>
+      </div>
+      <div
+        class="toolbar-item"
+        :class="{ 'toolbar-item--disabled': !showPreview || exportBusy || previewBusy }"
         title="将右侧预览区截图导出为 PDF"
         @click="handleExportPdf"
       >
@@ -36,7 +44,7 @@
       </div>
       <div
         class="toolbar-item"
-        :class="{ 'toolbar-item--disabled': !showPreview || exportBusy }"
+        :class="{ 'toolbar-item--disabled': !showPreview || exportBusy || previewBusy }"
         title="将右侧预览区截图导出为 PNG 长图"
         @click="handleExportPng"
       >
@@ -92,6 +100,21 @@
         </div>
       </div>
     </div>
+
+    <ExportPreviewModal
+      :open="previewOpen"
+      :title="`PDF 预览 · ${activeDemoTab}`"
+      :pages="previewPages"
+      :loading="previewBusy"
+      :error="previewError"
+      :filename="`markdown-${activeDemoTab}`"
+      :pdf-blob="previewPdfBlob"
+      :pdf="pdfExportOptions"
+      :layout="previewLayout"
+      configurable
+      @close="handlePreviewClose"
+      @update:pdf="handlePdfConfigChange"
+    />
   </div>
 </template>
 
@@ -104,8 +127,16 @@
   import VueMarkdown from '../components/markdown';
   import {
     MarkdownExportHost,
+    ExportPreviewModal,
     type MarkdownExportHostExpose
   } from '@nnnb/markdown/vue-ui';
+  import type { ExportPreviewPage, PdfExportOptions } from '@nnnb/markdown';
+  import type { PdfPageBreakContext } from '@nnnb/markdown';
+  import {
+    buildPdfPreviewFromCanvas,
+    captureTargetCanvas,
+    mergePdfOptions
+  } from '@nnnb/markdown';
   import { EditorHelper } from './editorHelper';
   import { DEMO_MARKDOWN, demoTabList, type DemoTabId } from './demoData';
   import { useStreamPlayback } from '../hooks/useStreamPlayback';
@@ -125,6 +156,24 @@
   const showPreview = ref(true);
   /** 导出进行中 */
   const exportBusy = ref(false);
+  /** PDF 预览弹层 */
+  const previewOpen = ref(false);
+  const previewBusy = ref(false);
+  const previewError = ref<string | null>(null);
+  const previewPages = ref<ExportPreviewPage[]>([]);
+  const previewPdfBlob = ref<Blob | null>(null);
+  const previewLayout = ref<{ pageWidthMm: number; pageHeightMm: number } | null>(
+    null
+  );
+  const previewSourceCanvas = ref<HTMLCanvasElement | null>(null);
+  const previewPageBreakContext = ref<PdfPageBreakContext | null>(null);
+  /** PDF 分页配置 */
+  const pdfExportOptions = ref<PdfExportOptions>({
+    mode: 'paginated',
+    pageSize: 'a4',
+    orientation: 'portrait',
+    marginMm: 10
+  });
   /** 导出宿主 ref */
   const exportHostRef = ref<MarkdownExportHostExpose | null>(null);
   /** 编辑器助手实例 */
@@ -200,6 +249,92 @@
   }
 
   /**
+   * 应用预览结果
+   * @param canvas 已截图 Canvas
+   */
+  async function applyPreviewResult(canvas: HTMLCanvasElement) {
+    const result = await buildPdfPreviewFromCanvas(
+      canvas,
+      pdfExportOptions.value,
+      previewPageBreakContext.value ?? undefined
+    );
+    previewPages.value = result.pages;
+    previewPdfBlob.value = result.pdfBlob;
+    previewLayout.value = {
+      pageWidthMm: result.layout.pageWidthMm,
+      pageHeightMm: result.layout.pageHeightMm
+    };
+  }
+
+  /**
+   * 关闭 PDF 预览
+   */
+  function handlePreviewClose() {
+    previewOpen.value = false;
+    previewSourceCanvas.value = null;
+    previewPageBreakContext.value = null;
+  }
+
+  /**
+   * 分页配置变更后重新切片
+   * @param patch 增量配置
+   */
+  async function handlePdfConfigChange(patch: PdfExportOptions) {
+    pdfExportOptions.value = mergePdfOptions(pdfExportOptions.value, patch);
+    if (!previewSourceCanvas.value) return;
+
+    previewBusy.value = true;
+    previewError.value = null;
+
+    try {
+      await applyPreviewResult(previewSourceCanvas.value);
+    } catch (error) {
+      console.error('[MarkdownEditor] 更新 PDF 分页配置失败', error);
+      previewError.value = '更新分页配置失败';
+    } finally {
+      previewBusy.value = false;
+    }
+  }
+
+  /**
+   * 预览 PDF 分页效果
+   */
+  async function handlePreviewPdf() {
+    if (!showPreview.value || exportBusy.value || previewBusy.value || !exportHostRef.value) {
+      return;
+    }
+
+    previewOpen.value = true;
+    previewBusy.value = true;
+    previewError.value = null;
+    previewPages.value = [];
+    previewPdfBlob.value = null;
+    previewLayout.value = null;
+    previewSourceCanvas.value = null;
+    previewPageBreakContext.value = null;
+
+    try {
+      const target = exportHostRef.value.getTarget();
+      if (!target) throw new Error('导出容器未就绪');
+
+      const captureResult = await captureTargetCanvas(target, {
+        capture: {
+          width: Math.ceil(target.getBoundingClientRect().width),
+          syncStyles: true
+        }
+      });
+      previewSourceCanvas.value = captureResult.canvas;
+      previewPageBreakContext.value = captureResult.pageBreakContext;
+      await applyPreviewResult(captureResult.canvas);
+    } catch (error) {
+      console.error('[MarkdownEditor] 预览 PDF 失败', error);
+      previewError.value = '预览 PDF 失败，请确认预览区已渲染完成';
+    } finally {
+      previewBusy.value = false;
+    }
+  }
+
+  /**
    * 导出 PDF
    */
   async function handleExportPdf() {
@@ -212,7 +347,8 @@
         capture: {
           width: Math.ceil(target.getBoundingClientRect().width),
           syncStyles: true
-        }
+        },
+        pdf: pdfExportOptions.value
       });
     } catch (error) {
       console.error('[MarkdownEditor] 导出 PDF 失败', error);

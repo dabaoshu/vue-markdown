@@ -29,17 +29,67 @@ export interface CaptureOptions {
 }
 
 /**
+ * PDF 分页模式
+ */
+export type PdfPaginationMode = 'paginated' | 'single';
+
+/**
+ * 预设页面尺寸
+ */
+export type PdfPageSizePreset = 'a4' | 'letter';
+
+/**
+ * PDF 页边距（毫米）
+ */
+export interface PdfMarginOptions {
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+}
+
+/**
  * PDF 分页参数
  */
 export interface PdfExportOptions {
-  /** 页面尺寸，默认 a4 */
-  pageSize?: 'a4' | 'letter';
+  /**
+   * 分页模式
+   * - paginated：按页高切分（默认）
+   * - single：整页缩放至单张 PDF
+   */
+  mode?: PdfPaginationMode;
+  /** 页面尺寸，默认 a4；custom 时需配合 customPageSize */
+  pageSize?: PdfPageSizePreset | 'custom';
+  /** 自定义页面尺寸（毫米） */
+  customPageSize?: { widthMm: number; heightMm: number };
   /** 方向，默认 portrait */
   orientation?: 'portrait' | 'landscape';
-  /** 页边距（毫米），默认 10 */
+  /** 统一页边距（毫米），默认 10；可被 margins 分项覆盖 */
   marginMm?: number;
+  /** 分项页边距（毫米） */
+  margins?: PdfMarginOptions;
   /** JPEG 压缩质量 0–1，默认 0.92 */
   imageQuality?: number;
+  /**
+   * 是否启用智能分页（沿 DOM 块边界切分，避免拦腰切断文字/图表）
+   * 默认 true
+   */
+  smartBreak?: boolean;
+}
+
+/**
+ * 规范化后的 PDF 分页配置
+ */
+export interface ResolvedPdfExportOptions {
+  mode: PdfPaginationMode;
+  pageSize: PdfPageSizePreset | 'custom';
+  orientation: 'portrait' | 'landscape';
+  pageWidthMm: number;
+  pageHeightMm: number;
+  margins: Required<PdfMarginOptions>;
+  imageQuality: number;
+  customPageSize?: { widthMm: number; heightMm: number };
+  smartBreak: boolean;
 }
 
 /**
@@ -75,4 +125,39 @@ export interface ExportResult {
   format: DomExportFormat;
   blob?: Blob;
   filename?: string;
+}
+
+/**
+ * PDF 预览单页
+ */
+export interface ExportPreviewPage {
+  /** 页码，从 1 开始 */
+  pageNumber: number;
+  /** JPEG 预览图 data URL */
+  dataUrl: string;
+  /** 页宽（像素） */
+  width: number;
+  /** 页高（像素） */
+  height: number;
+}
+
+/**
+ * PDF 预览结果
+ */
+export interface ExportPreviewResult {
+  /** 分页预览图 */
+  pages: ExportPreviewPage[];
+  /** 总页数 */
+  pageCount: number;
+  /** 与预览一致的 PDF Blob，可直接下载避免重复截图 */
+  pdfBlob: Blob;
+  /** 实际使用的 PDF 分页配置 */
+  pdfOptions: ResolvedPdfExportOptions;
+  /** 页面布局（毫米） */
+  layout: {
+    pageWidthMm: number;
+    pageHeightMm: number;
+    contentWidthMm: number;
+    contentHeightMm: number;
+  };
 }

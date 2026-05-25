@@ -10,5 +10,8 @@ export const EXPORT_IGNORE_SELECTOR = '[data-export-ignore]';
 /** 导出时强制展开的内容 */
 export const EXPORT_EXPAND_SELECTOR = '[data-export-expand]';
 
+/** 导出分页时保持完整的块（不可拦腰切分） */
+export const EXPORT_KEEP_TOGETHER_SELECTOR = '[data-export-keep-together]';
+
 /** Mermaid 图表 SVG 容器 */
 export const MERMAID_SVG_SELECTOR = '.mermaid-block svg, .mermaid-block__surface svg';

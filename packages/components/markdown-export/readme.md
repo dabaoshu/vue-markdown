@@ -10,8 +10,8 @@
 
 ## 导入边界
 
-- 引擎能力：`@nnnb/markdown` → `exportFromDom`、`waitForDomStable`
-- Vue UI：`@nnnb/markdown/vue-ui` → `MarkdownExportHost`、`ExportToolbar`
+- 引擎能力：`@nnnb/markdown` → `exportFromDom`、`previewFromDom`、`waitForDomStable`
+- Vue UI：`@nnnb/markdown/vue-ui` → `MarkdownExportHost`、`ExportToolbar`、`ExportPreviewModal`
 
 ## 快速使用
 
@@ -20,6 +20,7 @@
   <MarkdownExportHost ref="exportHost">
     <VueMarkdown :source="md" :components="components" />
   </MarkdownExportHost>
+  <!-- 内置「预览 PDF / 导出 PDF / 导出 PNG」 -->
   <ExportToolbar :host="exportHost" />
 </template>
 
@@ -29,6 +30,54 @@ import { VueMarkdown, MarkdownExportHost, ExportToolbar } from '@nnnb/markdown/v
 
 const exportHost = ref();
 </script>
+```
+
+### PDF 分页预览
+
+预览与导出共用同一套截图流水线，**所见即所导**：
+
+```vue
+<ExportPreviewModal
+  :open="previewOpen"
+  :pages="preview.pages"
+  :pdf-blob="preview.pdfBlob"
+  filename="my-doc"
+  @close="previewOpen = false"
+/>
+```
+
+或通过 Host 方法：
+
+```ts
+const result = await exportHost.value.previewPdf('my-doc', {
+  capture: { width: Math.ceil(target.getBoundingClientRect().width), syncStyles: true }
+});
+// result.pages — 分页 JPEG 预览图
+// result.pdfBlob — 与预览一致的 PDF，弹层内可直接下载
+```
+
+引擎层也可直接调用：
+
+```ts
+import { previewFromDom } from '@nnnb/markdown';
+
+const preview = await previewFromDom(target, {
+  capture: { syncStyles: true },
+  pdf: {
+    mode: 'paginated',
+    pageSize: 'a4',
+    orientation: 'portrait',
+    marginMm: 10
+  }
+});
+
+// 仅调整分页时复用 Canvas，无需重新截图
+import { buildPdfPreviewFromCanvas, mergePdfOptions } from '@nnnb/markdown';
+
+const nextPreview = await buildPdfPreviewFromCanvas(canvas, mergePdfOptions(preview.pdfOptions, {
+  pageSize: 'letter',
+  marginMm: 15
+}));
 ```
 
 ## 自定义组件就绪协议
@@ -48,6 +97,10 @@ pnpm add html2canvas jspdf
 
 ## API
 
+### `previewFromDom(target, options?)`
+
+生成 PDF 分页预览，不触发下载。返回 `pages`（JPEG data URL）与 `pdfBlob`（可直接下载）。
+
 ### `exportFromDom(options)`
 
 | 参数 | 说明 |
@@ -58,7 +111,13 @@ pnpm add html2canvas jspdf
 | `capture.fullPage` | 默认 true，截取 scrollHeight |
 | `capture.syncStyles` | 默认 true，镜像计算样式到 clone |
 | `capture.width` | 锁定截图宽度，建议传预览区可视宽度 |
-| `pdf.pageSize` | 默认 a4 |
+| `pdf.pageSize` | 默认 a4，可选 letter / custom |
+| `pdf.mode` | 默认 paginated，可选 single（单页长图） |
+| `pdf.orientation` | 默认 portrait |
+| `pdf.marginMm` | 统一页边距（毫米），默认 10 |
+| `pdf.margins` | 分项页边距，优先级高于 marginMm |
+| `pdf.customPageSize` | custom 模式下的 `{ widthMm, heightMm }` |
+| `pdf.smartBreak` | 默认 true，沿 DOM 块边界分页，避免切断文字/图表 |
 | `timeoutMs` | 默认 15000 |
 
 更多阶段规划见 [ROADMAP.md](./ROADMAP.md)。
