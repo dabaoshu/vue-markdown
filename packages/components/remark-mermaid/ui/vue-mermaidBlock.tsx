@@ -1,3 +1,4 @@
+import { renderMermaidASCII, renderMermaidSVG, THEMES } from 'beautiful-mermaid';
 import mermaid from 'mermaid';
 import {
   computed,
@@ -31,7 +32,7 @@ const DANGEROUS_SVG_TAGS = ['script', 'iframe', 'object', 'embed'] as const;
 
 /**
  * 解析 SVG、做有限安全清理后序列化为可交给 `v-html` 的字符串
- * @param svgMarkup Mermaid 返回的 SVG 字符串
+ * @param svgMarkup 引擎返回的 SVG 字符串
  * @returns 清理后的 SVG 序列化结果；无效时返回 `null`
  */
 function sanitizeSvgToHtmlString(svgMarkup: string): string | null {
@@ -63,8 +64,8 @@ function sanitizeSvgToHtmlString(svgMarkup: string): string | null {
 }
 
 /**
- * 判断 Mermaid 返回的 SVG 是否为错误占位图。
- * @param svgMarkup Mermaid 返回的 SVG 字符串
+ * 判断引擎返回的 SVG 是否为错误占位图。
+ * @param svgMarkup 引擎返回的 SVG 字符串
  * @returns {boolean} `true` 表示疑似 Mermaid 错误图
  */
 function isMermaidErrorSvg(svgMarkup: string): boolean {
@@ -79,8 +80,27 @@ function isMermaidErrorSvg(svgMarkup: string): boolean {
 }
 
 /**
+ * 将 `beautiful-mermaid` 的 `svg.theme` 名解析为调色板并合并其余 SVG 选项
+ * @param props 组件 props
+ * @returns 传给 `renderMermaidSVG` 的选项对象
+ */
+function resolveBeautifulSvgOptions(props: MermaidBlockProps) {
+  const svgOptions = { ...(props.beautifulOptions?.svg || {}) };
+  const themeName = svgOptions.theme;
+  if (themeName && typeof themeName === 'string' && themeName in THEMES) {
+    const palette = THEMES[themeName as keyof typeof THEMES];
+    return {
+      ...palette,
+      ...svgOptions,
+      theme: undefined
+    };
+  }
+  return svgOptions;
+}
+
+/**
  * Mermaid 图表渲染组件
- * @description 将 Mermaid DSL 渲染为 SVG（可关闭），并提供加载态、错误态与交互绑定
+ * @description 将 Mermaid DSL 渲染为 SVG 或 ASCII（可关闭），支持 `mermaid` / `beautiful` 双引擎，并提供加载态、错误态与交互绑定
  */
 export const MermaidBlock = defineComponent({
   name: 'MermaidBlock',
@@ -93,11 +113,23 @@ export const MermaidBlock = defineComponent({
       type: String,
       required: false
     },
+    /** 渲染引擎：`mermaid` 使用官方库；`beautiful` 使用 beautiful-mermaid */
+    engine: {
+      type: String,
+      required: false,
+      default: 'mermaid'
+    },
+    /** Mermaid 原生初始化配置，仅 `engine='mermaid'` 时生效 */
     mermaidConfig: {
       type: Object,
       required: false
     },
-    /** 是否渲染 SVG；为 false 时仅展示源码 */
+    /** beautiful-mermaid 输出与主题配置，仅 `engine='beautiful'` 时生效 */
+    beautifulOptions: {
+      type: Object,
+      required: false
+    },
+    /** 是否渲染可视输出；为 false 时仅展示源码 */
     renderSvg: {
       type: Boolean,
       required: false,
@@ -108,7 +140,7 @@ export const MermaidBlock = defineComponent({
       required: false,
       default: 'mermaid-block'
     },
-    /** 是否正在加载 检测是否闭合 fence */
+    /** 是否正在流式加载，用于检测 fence 是否闭合 */
     streamLoading: {
       type: Boolean,
       required: false,
@@ -169,6 +201,8 @@ export const MermaidBlock = defineComponent({
     const streamPending = ref(false);
     /** 经清理的 SVG 字符串，由 `v-html` 挂载，避免与 Vue patch 争抢同一节点的子节点 */
     const svgHtml = ref('');
+    /** beautiful 引擎 ASCII 模式下的纯文本输出 */
+    const asciiText = ref('');
 
     /** 并发渲染代次，用于丢弃过期异步结果 */
     let renderGen = 0;
@@ -189,29 +223,38 @@ export const MermaidBlock = defineComponent({
     };
 
     const chartId = computed(
-      () => `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+      () => props.id || `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
     );
 
     const normalizedCode = computed(() => (props.code || '').trim());
+    const currentEngine = computed(() => props.engine || 'mermaid');
+    /** 是否使用 beautiful 引擎的 ASCII 输出 */
+    const isBeautifulAscii = computed(
+      () =>
+        currentEngine.value === 'beautiful' &&
+        props.beautifulOptions?.output === 'ascii'
+    );
 
     /** 导出等待：流式 / 遮罩 / 宽限期 */
     const isExportLoading = computed(
-      () =>
-        props.streamLoading ||
-        loading.value ||
-        streamPending.value
+      () => props.streamLoading || loading.value || streamPending.value
     );
 
     /**
-     * 导出就绪：非 loading 且（无需 SVG / 已有 SVG / 错误态 / 空代码）
+     * 导出就绪：非 loading 且（无需 SVG / 已有输出 / 错误态 / 空代码）
      */
     const isExportReady = computed(() => {
       if (isExportLoading.value) return false;
       if (props.renderSvg === false) return true;
       if (!normalizedCode.value) return true;
+      if (isBeautifulAscii.value) return !!asciiText.value || !!errorMessage.value;
       return !!svgHtml.value || !!errorMessage.value;
     });
 
+    /**
+     * 按当前 props 初始化 Mermaid（配置签名未变时跳过）
+     * @returns {void}
+     */
     const ensureMermaidInitialized = () => {
       const merged = {
         /**
@@ -232,23 +275,86 @@ export const MermaidBlock = defineComponent({
     };
 
     /**
-     * 执行 Mermaid 渲染（仅在 `renderSvg` 为真时调用）
+     * 清空可视输出与错误/宽限状态
+     * @returns {void}
+     */
+    const resetVisualState = () => {
+      errorMessage.value = '';
+      streamPending.value = false;
+      svgHtml.value = '';
+      asciiText.value = '';
+    };
+
+    /**
+     * 使用官方 mermaid 引擎渲染 SVG
      * @returns {Promise<void>}
      */
-    const renderMermaid = async () => {
-      if (!props.renderSvg) {
-        renderTiming.dispose();
-        loading.value = false;
-        streamPending.value = false;
-        errorMessage.value = '';
+    const renderWithMermaidEngine = async () => {
+      ensureMermaidInitialized();
+      /** 预解析，避免直接渲染错误图 */
+      await mermaid.parse(normalizedCode.value, {
+        suppressErrors: false
+      });
+
+      const { svg, bindFunctions } = await mermaid.render(
+        chartId.value,
+        normalizedCode.value
+      );
+
+      const safe = sanitizeSvgToHtmlString(svg);
+      if (!safe || isMermaidErrorSvg(safe)) {
+        throw new Error(props.errorText || defaultErrorText);
+      }
+
+      svgHtml.value = safe;
+      asciiText.value = '';
+      await nextTick();
+      if (containerRef.value) {
+        bindFunctions?.(containerRef.value);
+      }
+    };
+
+    /**
+     * 使用 beautiful-mermaid 引擎渲染 SVG 或 ASCII
+     * @returns {Promise<void>}
+     */
+    const renderWithBeautifulEngine = async () => {
+      if (props.beautifulOptions?.output === 'ascii') {
+        asciiText.value = renderMermaidASCII(
+          normalizedCode.value,
+          props.beautifulOptions?.ascii
+        );
         svgHtml.value = '';
         return;
       }
 
-      errorMessage.value = '';
-      streamPending.value = false;
+      const svg = renderMermaidSVG(
+        normalizedCode.value,
+        resolveBeautifulSvgOptions(props)
+      );
+      const safe = sanitizeSvgToHtmlString(svg);
+      if (!safe) {
+        throw new Error(props.errorText || defaultErrorText);
+      }
+      svgHtml.value = safe;
+      asciiText.value = '';
+      await nextTick();
+    };
+
+    /**
+     * 执行图表渲染（仅在 `renderSvg` 为真时调用）
+     * @returns {Promise<void>}
+     */
+    const renderDiagram = async () => {
+      if (!props.renderSvg) {
+        renderTiming.dispose();
+        loading.value = false;
+        resetVisualState();
+        return;
+      }
+
+      resetVisualState();
       if (!normalizedCode.value) {
-        svgHtml.value = '';
         lastRenderedCacheKey = '';
         return;
       }
@@ -257,10 +363,15 @@ export const MermaidBlock = defineComponent({
         props.cacheKey ||
         JSON.stringify({
           code: normalizedCode.value,
+          engine: currentEngine.value,
           mermaidConfig: props.mermaidConfig || {},
+          beautifulOptions: props.beautifulOptions || {},
           renderSvg: props.renderSvg
         });
-      if (currentCacheKey === lastRenderedCacheKey && svgHtml.value) {
+      if (
+        currentCacheKey === lastRenderedCacheKey &&
+        (svgHtml.value || asciiText.value)
+      ) {
         return;
       }
 
@@ -275,13 +386,10 @@ export const MermaidBlock = defineComponent({
        * @returns {boolean} `true` 表示任务已失效
        */
       const isStaleRender = () => gen !== renderGen || unmounted;
-
       const useOverlay = props.showLoading !== false;
-      const delayMs = Math.max(
-        0,
-        props.loadingDelayMs ?? defaultLoadingDelayMs
-      );
+      const delayMs = Math.max(0, props.loadingDelayMs ?? defaultLoadingDelayMs);
       const minMs = Math.max(0, props.minLoadingMs ?? defaultMinLoadingMs);
+
       renderTiming.render({
         debounceMs: 0,
         overlayEnabled: useOverlay,
@@ -293,34 +401,15 @@ export const MermaidBlock = defineComponent({
         isCancelled: isStaleRender,
         task: async () => {
           try {
-            ensureMermaidInitialized();
-            /**预解析，避免直接渲染错误图 */
-            await mermaid.parse(normalizedCode.value, {
-              suppressErrors: false
-            });
-
-            const { svg, bindFunctions } = await mermaid.render(
-              chartId.value,
-              normalizedCode.value
-            );
-
-            if (isStaleRender()) return;
-
-            const safe = sanitizeSvgToHtmlString(svg);
-            if (!safe || isMermaidErrorSvg(safe)) {
-              errorMessage.value = props.errorText || defaultErrorText;
-              svgHtml.value = '';
-              return;
+            if (currentEngine.value === 'beautiful') {
+              await renderWithBeautifulEngine();
+            } else {
+              await renderWithMermaidEngine();
             }
 
-            svgHtml.value = safe;
+            if (isStaleRender()) return;
             lastRenderedCacheKey = currentCacheKey;
             streamPending.value = false;
-            await nextTick();
-            if (isStaleRender()) return;
-            if (containerRef.value) {
-              bindFunctions?.(containerRef.value);
-            }
             props.onRender?.();
           } catch (error: unknown) {
             if (isStaleRender()) return;
@@ -340,8 +429,12 @@ export const MermaidBlock = defineComponent({
               return;
             }
             streamPending.value = false;
-            errorMessage.value = props.errorText || defaultErrorText;
+            errorMessage.value =
+              error instanceof Error && error.message
+                ? error.message
+                : props.errorText || defaultErrorText;
             svgHtml.value = '';
+            asciiText.value = '';
             props.onError?.(
               error instanceof Error ? error : new Error(String(error))
             );
@@ -351,7 +444,7 @@ export const MermaidBlock = defineComponent({
     };
 
     /**
-     * 调度 Mermaid 渲染
+     * 调度图表渲染
      * @param immediate 是否立即渲染；`true` 时跳过防抖
      * @returns {void}
      */
@@ -365,7 +458,7 @@ export const MermaidBlock = defineComponent({
         setLoading: () => {},
         isCancelled: () => unmounted,
         task: async () => {
-          void renderMermaid();
+          void renderDiagram();
         }
       });
     };
@@ -376,12 +469,19 @@ export const MermaidBlock = defineComponent({
     });
 
     watch(
-      () => [props.code, props.cacheKey, props.mermaidConfig, props.renderSvg],
+      () => [
+        props.code,
+        props.cacheKey,
+        props.engine,
+        props.mermaidConfig,
+        props.beautifulOptions,
+        props.renderSvg
+      ],
       () => {
         if (
           props.cacheKey &&
           props.cacheKey === lastRenderedCacheKey &&
-          !!svgHtml.value
+          (svgHtml.value || asciiText.value)
         ) {
           return;
         }
@@ -399,11 +499,6 @@ export const MermaidBlock = defineComponent({
     });
 
     return () => {
-      // console.log('vue-mermaidBlock', chartId.value, {
-      //   renderSvg: props.renderSvg,
-      //   showLoading: props.showLoading,
-      //   loading: loading.value
-      // });
       if (props.renderSvg === false) {
         return (
           <div
@@ -423,9 +518,7 @@ export const MermaidBlock = defineComponent({
             loading.value && props.showLoading ? ' loading' : ''
           }`}
           style={{ position: 'relative' }}
-          {...(isExportLoading.value
-            ? { 'data-export-loading': '' }
-            : {})}
+          {...(isExportLoading.value ? { 'data-export-loading': '' } : {})}
           data-export-ready={isExportReady.value ? 'true' : 'false'}
         >
           {loading.value && props.showLoading ? (
@@ -445,12 +538,20 @@ export const MermaidBlock = defineComponent({
               {props.loadingText || defaultLoadingText}
             </div>
           ) : null}
-          <div
-            ref={containerRef}
-            class='mermaid-block__surface'
-            v-html={svgHtml.value}
-            key={chartId.value}
-          />
+          {isBeautifulAscii.value ? (
+            <div ref={containerRef} class='mermaid-block__surface' key={chartId.value}>
+              <pre>
+                <code>{asciiText.value}</code>
+              </pre>
+            </div>
+          ) : (
+            <div
+              ref={containerRef}
+              class='mermaid-block__surface'
+              v-html={svgHtml.value}
+              key={chartId.value}
+            />
+          )}
           {streamPending.value ? (
             <div
               class='mermaid-block__stream-pending-mask'

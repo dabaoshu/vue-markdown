@@ -1,15 +1,90 @@
+import type {
+  AsciiRenderOptions as BeautifulMermaidAsciiRenderOptions,
+  RenderOptions as BeautifulMermaidSvgRenderOptions,
+  ThemeName as BeautifulMermaidThemeName
+} from 'beautiful-mermaid';
 import type { MermaidConfig } from 'mermaid';
+
+export type MermaidRenderEngine = 'mermaid' | 'beautiful';
+export type BeautifulMermaidOutput = 'svg' | 'ascii';
+
+export interface BeautifulMermaidSvgOptions
+  extends Partial<
+    Pick<
+      BeautifulMermaidSvgRenderOptions,
+      | 'bg'
+      | 'fg'
+      | 'line'
+      | 'accent'
+      | 'muted'
+      | 'surface'
+      | 'border'
+      | 'font'
+      | 'padding'
+      | 'nodeSpacing'
+      | 'layerSpacing'  
+      | 'transparent'
+      | 'interactive'
+    >
+  > {
+  /**
+   * beautiful-mermaid 内置主题名
+   * @description 命中 `THEMES` 时先展开主题颜色，再由显式颜色字段覆盖
+   */
+  theme?: BeautifulMermaidThemeName | string;
+}
+
+export interface BeautifulMermaidAsciiOptions
+  extends Partial<
+    Pick<
+      BeautifulMermaidAsciiRenderOptions,
+      'useAscii' | 'paddingX' | 'paddingY' | 'boxBorderPadding'
+    >
+  > {}
+
+/**
+ * beautiful-mermaid 运行配置
+ * @description 支持 SVG / ASCII 双输出；SVG 模式下可通过 theme 或显式颜色字段控制主题
+ */
+export interface BeautifulMermaidOptions {
+  /** 输出格式；仅在 `engine='beautiful'` 时生效 */
+  output?: BeautifulMermaidOutput;
+  /** SVG 输出配置 */
+  svg?: BeautifulMermaidSvgOptions;
+  /** ASCII 输出配置 */
+  ascii?: BeautifulMermaidAsciiOptions;
+}
+
+/**
+ * Mermaid 引擎参数
+ * @description 统一描述默认 mermaid 与 beautiful-mermaid 双引擎配置
+ */
+export interface MermaidEngineOptions {
+  /**
+   * Mermaid 渲染引擎
+   * @default 'mermaid'
+   */
+  engine?: MermaidRenderEngine;
+  /**
+   * Mermaid 原生运行配置
+   * @description 仅在 `engine='mermaid'` 时生效
+   */
+  mermaidConfig?: MermaidConfig;
+  /**
+   * beautiful-mermaid 配置
+   * @description 仅在 `engine='beautiful'` 时生效
+   */
+  beautifulOptions?: BeautifulMermaidOptions;
+}
 
 /**
  * Mermaid 渲染组件的通用参数
  * @description 控制图表渲染、状态文案和生命周期回调
  */
-export interface MermaidRenderOptions {
-  /** Mermaid 运行配置 */
-  mermaidConfig?: MermaidConfig;
+export interface MermaidRenderOptions extends MermaidEngineOptions {
   /**
-   * 是否将 DSL 渲染为 SVG 并挂载到 DOM
-   * @description 为 `false` 时仅展示源码（`<pre><code>`），不调用 `mermaid.render`，适合仅需源码预览或降低运行时开销的场景
+   * 是否将 DSL 渲染为可视输出并挂载到 DOM
+   * @description 为 `false` 时仅展示源码（`<pre><code>`），适合仅需源码预览或降低运行时开销的场景
    * @default true
    */
   renderSvg?: boolean;
@@ -67,10 +142,8 @@ export interface MermaidBlockProps extends MermaidRenderOptions {
  * rehype Mermaid 插件参数
  * @description 用于透传组件渲染所需的默认配置
  */
-export interface RehypeMermaidOptions {
-  /** Mermaid 运行配置 */
-  mermaidConfig?: MermaidConfig;
-  /** 是否输出 SVG（透传给 `MermaidBlock`，参见 {@link MermaidRenderOptions.renderSvg}） */
+export interface RehypeMermaidOptions extends MermaidEngineOptions {
+  /** 是否输出可视渲染（透传给 `MermaidBlock`） */
   renderSvg?: boolean;
   /** 是否展示加载态 */
   showLoading?: boolean;
@@ -84,7 +157,7 @@ export interface RehypeMermaidOptions {
   streamPendingText?: string;
   /**
    * 是否允许通过代码块 meta 覆盖默认参数
-   * @description 例如：```mermaid renderSvg=false loadingDelayMs=0
+   * @description 例如：```mermaid engine=beautiful output=ascii
    * @default true
    */
   enableMetaOptions?: boolean;
@@ -103,4 +176,3 @@ export interface RehypeMermaidOptions {
    */
   injectCacheKey?: boolean;
 }
-

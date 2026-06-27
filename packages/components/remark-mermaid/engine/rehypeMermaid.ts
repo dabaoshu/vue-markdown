@@ -1,5 +1,9 @@
+import type {
+  BeautifulMermaidOptions,
+  MermaidRenderEngine,
+  RehypeMermaidOptions
+} from '../core/types';
 import type { Root } from 'hast';
-import type { RehypeMermaidOptions } from '../core/types';
 import {
   createStableHash,
   parseBooleanMetaValue,
@@ -9,6 +13,7 @@ import {
 } from '../../componentsUtils/engine';
 
 type MermaidMetaOptions = {
+  engine?: MermaidRenderEngine;
   renderSvg?: boolean;
   showLoading?: boolean;
   loadingDelayMs?: number;
@@ -17,7 +22,37 @@ type MermaidMetaOptions = {
   streamPendingText?: string;
   className?: string;
   id?: string;
+  beautifulOptions?: BeautifulMermaidOptions;
 };
+
+function ensureBeautifulOptions(
+  target: MermaidMetaOptions
+): NonNullable<MermaidMetaOptions['beautifulOptions']> {
+  if (!target.beautifulOptions) {
+    target.beautifulOptions = {};
+  }
+  return target.beautifulOptions;
+}
+
+function ensureBeautifulSvgOptions(
+  target: MermaidMetaOptions
+): NonNullable<NonNullable<MermaidMetaOptions['beautifulOptions']>['svg']> {
+  const beautifulOptions = ensureBeautifulOptions(target);
+  if (!beautifulOptions.svg) {
+    beautifulOptions.svg = {};
+  }
+  return beautifulOptions.svg;
+}
+
+function ensureBeautifulAsciiOptions(
+  target: MermaidMetaOptions
+): NonNullable<NonNullable<MermaidMetaOptions['beautifulOptions']>['ascii']> {
+  const beautifulOptions = ensureBeautifulOptions(target);
+  if (!beautifulOptions.ascii) {
+    beautifulOptions.ascii = {};
+  }
+  return beautifulOptions.ascii;
+}
 
 /**
  * 解析 Mermaid 代码块 meta 选项
@@ -29,6 +64,11 @@ function parseMermaidMeta(meta: string): MermaidMetaOptions {
   const metaMap = parseFenceMetaToMap(meta);
   for (const [key, rawValue] of Object.entries(metaMap)) {
     switch (key) {
+      case 'engine':
+        if (rawValue === 'mermaid' || rawValue === 'beautiful') {
+          result.engine = rawValue;
+        }
+        break;
       case 'renderSvg': {
         const value = parseBooleanMetaValue(rawValue);
         if (typeof value === 'boolean') result.renderSvg = value;
@@ -57,6 +97,58 @@ function parseMermaidMeta(meta: string): MermaidMetaOptions {
       case 'streamPendingText':
         result.streamPendingText = rawValue;
         break;
+      case 'output':
+        if (rawValue === 'svg' || rawValue === 'ascii') {
+          ensureBeautifulOptions(result).output = rawValue;
+        }
+        break;
+      case 'theme':
+        ensureBeautifulSvgOptions(result).theme = rawValue;
+        break;
+      case 'bg':
+      case 'fg':
+      case 'line':
+      case 'accent':
+      case 'muted':
+      case 'surface':
+      case 'border':
+      case 'font':
+        ensureBeautifulSvgOptions(result)[key] = rawValue;
+        break;
+      case 'padding':
+      case 'nodeSpacing':
+      case 'layerSpacing':
+      case 'componentSpacing': {
+        const value = parseNumberMetaValue(rawValue);
+        if (typeof value === 'number') {
+          ensureBeautifulSvgOptions(result)[key] = value;
+        }
+        break;
+      }
+      case 'transparent':
+      case 'interactive': {
+        const value = parseBooleanMetaValue(rawValue);
+        if (typeof value === 'boolean') {
+          ensureBeautifulSvgOptions(result)[key] = value;
+        }
+        break;
+      }
+      case 'useAscii': {
+        const value = parseBooleanMetaValue(rawValue);
+        if (typeof value === 'boolean') {
+          ensureBeautifulAsciiOptions(result).useAscii = value;
+        }
+        break;
+      }
+      case 'paddingX':
+      case 'paddingY':
+      case 'boxBorderPadding': {
+        const value = parseNumberMetaValue(rawValue);
+        if (typeof value === 'number') {
+          ensureBeautifulAsciiOptions(result)[key] = value;
+        }
+        break;
+      }
       case 'className':
         result.className = rawValue;
         break;
@@ -68,6 +160,25 @@ function parseMermaidMeta(meta: string): MermaidMetaOptions {
     }
   }
   return result;
+}
+
+function mergeBeautifulOptions(
+  base?: BeautifulMermaidOptions,
+  override?: BeautifulMermaidOptions
+): BeautifulMermaidOptions | undefined {
+  if (!base && !override) return undefined;
+  return {
+    ...(base || {}),
+    ...(override || {}),
+    svg: {
+      ...(base?.svg || {}),
+      ...(override?.svg || {})
+    },
+    ascii: {
+      ...(base?.ascii || {}),
+      ...(override?.ascii || {})
+    }
+  };
 }
 
 /**
@@ -85,6 +196,7 @@ function buildMermaidProps(
   cacheKey?: string
 ): Record<string, unknown> {
   const merged = {
+    engine: options.engine,
     renderSvg: options.renderSvg,
     showLoading: options.showLoading,
     loadingDelayMs: options.loadingDelayMs,
@@ -95,8 +207,20 @@ function buildMermaidProps(
   };
   return {
     code,
+    engine: merged.engine || 'mermaid',
     mermaidConfig: options.mermaidConfig,
-    ...merged,
+    beautifulOptions: mergeBeautifulOptions(
+      options.beautifulOptions,
+      metaOptions.beautifulOptions
+    ),
+    renderSvg: merged.renderSvg,
+    showLoading: merged.showLoading,
+    loadingDelayMs: merged.loadingDelayMs,
+    minLoadingMs: merged.minLoadingMs,
+    streamErrorGraceMs: merged.streamErrorGraceMs,
+    streamPendingText: merged.streamPendingText,
+    className: merged.className,
+    id: merged.id,
     cacheKey
   };
 }
@@ -109,24 +233,13 @@ function buildMermaidProps(
 export function rehypeMermaid(options: RehypeMermaidOptions = {}) {
   return (tree: Root) => {
     replaceCodeFenceToComponent(tree, {
-      // lang-mermaid、mermaid、language-mermaid
       languages: ['mermaid', 'lang-mermaid', 'language-mermaid'],
       tagName: 'MermaidBlock',
-      /**
-       * 判断是否需要将当前代码块替换为 MermaidBlock 组件。
-       * 
-       * 逻辑说明：
-       * - 只有当代码块的 normalizedCode（即经过预处理的 Mermaid 代码内容）不为空时，才进行替换；
-       * - 如果 normalizedCode 为空，还需要判断配置的 fallbackMode（回退模式）：
-       *   - 默认 fallbackMode 为 'keep-code'，意味着遇到空代码块会保留源码（不替换为组件）；
-       *   - 如果 fallbackMode 不是 'keep-code'，即使 normalizedCode 为空也需要替换为组件（通常用于自定义空状态或错误提示）。
-       */
       shouldReplace: (context) => {
         const normalizedCode = context.normalizedCode;
         const fallbackMode = options.fallbackMode || 'keep-code';
         return !!normalizedCode || fallbackMode !== 'keep-code';
       },
-
       buildProperties: (context) => {
         const code = context.rawCode;
         const meta = context.meta;
@@ -140,7 +253,12 @@ export function rehypeMermaid(options: RehypeMermaidOptions = {}) {
                 JSON.stringify({
                   base: context.cacheKey,
                   code,
+                  engine: options.engine || 'mermaid',
                   mermaidConfig: options.mermaidConfig,
+                  beautifulOptions: mergeBeautifulOptions(
+                    options.beautifulOptions,
+                    metaOptions.beautifulOptions
+                  ),
                   renderOptions: {
                     renderSvg: options.renderSvg,
                     showLoading: options.showLoading,
