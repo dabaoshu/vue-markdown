@@ -15,6 +15,8 @@ import {
  * - /testlogin       -> testlogin/App.vue
  * - /imagaBackground -> imagaBackground/cropperImage.vue
  * - /dirTree         -> Dirtree.vue
+ * - /mermaid-card    -> mermaidCard/index.vue
+ * - /iframe-demo    -> iframeDemo/index.vue
  */
 const routes: RouteRecordRaw[] = [
   {
@@ -57,6 +59,26 @@ const routes: RouteRecordRaw[] = [
     path: '/dirTree',
     name: 'DirTree',
     component: () => import('../Dirtree.vue')
+  },
+  {
+    path: '/modalpage',
+    name: 'ModalPage',
+    component: () => import('../modalpage/index.vue')
+  },
+  {
+    path: '/iframe-embed',
+    name: 'IframeEmbedDemo',
+    component: () => import('../iframe_demo/index.vue')
+  },
+  {
+    path: '/iframe-child',
+    name: 'IframeChild',
+    component: () => import('../iframe_demo/child.vue')
+  },
+  {
+    path: '/mermaid-card',
+    name: 'MermaidCardDemo',
+    component: () => import('../mermaidCard/index.vue')
   },
   {
     path: '/',
