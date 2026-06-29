@@ -6,7 +6,7 @@ import RemarkBreaks from 'remark-breaks';
 import RemarkGfm from 'remark-gfm';
 import 'katex/dist/katex.min.css';
 import { ElTable, ElTableColumn } from 'element-plus';
-import MermaidInteractiveBlock from './code_mermaid';
+import MermaidInteractiveBlock from './code_mermaid_card';
 import ThinkElement, {
   MergeThinkRemark,
   thinkGroupElementt
@@ -87,15 +87,25 @@ export default defineComponent({
               code: CodeBlock
             }}
             rehypePlugins={[
-              // rehypeMermaid
               [
                 rehypeMermaid,
                 {
+                  // 全局默认官方引擎；块级 engine=beautiful 由 fence meta 覆盖（见 readme）
+                  engine: 'mermaid',
                   mermaidConfig: {
                     theme: 'default',
                     flowchart: { useMaxWidth: true }
                   },
-                  enableMetaOptions: false
+                  beautifulOptions: {
+                    output: 'svg',
+                    svg: {
+                      transparent: true
+                    }
+                  },
+                  showLoading: true,
+                  enableMetaOptions: true,
+                  injectCacheKey: true,
+                  fallbackMode: 'keep-code'
                 }
               ]
             ]}

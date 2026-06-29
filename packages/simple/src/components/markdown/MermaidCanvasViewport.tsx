@@ -167,7 +167,45 @@ export const MermaidCanvasViewport = defineComponent({
     }
 
     /**
-     * 在指定锚点位置执行缩放，保持鼠标下内容位置稳定。
+     * 读取当前内容在布局上的实际像素尺寸（含 SVG 缩放后的占位）。
+     * @returns {{ w: number; h: number }}
+     */
+    function getScaledContentSize(): { w: number; h: number } {
+      const content = contentRef.value;
+      const { w: iw, h: ih } = intrinsicSize.value;
+      const s = scale.value;
+      if (content) {
+        const layoutW = content.offsetWidth;
+        const layoutH = content.offsetHeight;
+        if (layoutW > 0 && layoutH > 0) {
+          return { w: layoutW, h: layoutH };
+        }
+      }
+      return { w: iw * s, h: ih * s };
+    }
+
+    /**
+     * 解析工具栏缩放的锚点：优先使用当前内容可视中心，避免自适应后与容器几何中心不一致导致漂移。
+     * @returns {{ x: number; y: number }}
+     */
+    function resolveZoomAnchor(): { x: number; y: number } {
+      const container = containerRef.value;
+      const { w, h } = getScaledContentSize();
+      if (w > 0 && h > 0) {
+        return {
+          x: translateX.value + w / 2,
+          y: translateY.value + h / 2
+        };
+      }
+      if (!container) return { x: 0, y: 0 };
+      return {
+        x: container.clientWidth / 2,
+        y: container.clientHeight / 2
+      };
+    }
+
+    /**
+     * 在指定锚点位置执行缩放，保持锚点下内容位置稳定（滚轮与工具栏共用）。
      * @param deltaScale 缩放增量
      * @param anchorX 锚点 X（相对容器）
      * @param anchorY 锚点 Y（相对容器）
@@ -220,6 +258,19 @@ export const MermaidCanvasViewport = defineComponent({
       const centeredX = (viewportWidth - scaledWidth) / 2;
       const centeredY = (viewportHeight - scaledHeight) / 2;
       setTransform(fitScale, centeredX, centeredY);
+
+      const actualSize = getScaledContentSize();
+      if (actualSize.w > 0 && actualSize.h > 0) {
+        const correctedX = (viewportWidth - actualSize.w) / 2;
+        const correctedY = (viewportHeight - actualSize.h) / 2;
+        if (
+          Math.abs(correctedX - translateX.value) > 0.5 ||
+          Math.abs(correctedY - translateY.value) > 0.5
+        ) {
+          translateX.value = Number(correctedX.toFixed(2));
+          translateY.value = Number(correctedY.toFixed(2));
+        }
+      }
     }
 
     /**
@@ -294,23 +345,21 @@ export const MermaidCanvasViewport = defineComponent({
     }
 
     /**
-     * 放大视图，默认以容器中心点为锚点。
+     * 放大视图，默认以内容可视中心为锚点。
      * @returns {void}
      */
     function zoomIn(): void {
-      const container = containerRef.value;
-      if (!container) return;
-      zoomAt(props.wheelStep, container.clientWidth / 2, container.clientHeight / 2);
+      const { x, y } = resolveZoomAnchor();
+      zoomAt(props.wheelStep, x, y);
     }
 
     /**
-     * 缩小视图，默认以容器中心点为锚点。
+     * 缩小视图，默认以内容可视中心为锚点。
      * @returns {void}
      */
     function zoomOut(): void {
-      const container = containerRef.value;
-      if (!container) return;
-      zoomAt(-props.wheelStep, container.clientWidth / 2, container.clientHeight / 2);
+      const { x, y } = resolveZoomAnchor();
+      zoomAt(-props.wheelStep, x, y);
     }
 
     onMounted(() => {
