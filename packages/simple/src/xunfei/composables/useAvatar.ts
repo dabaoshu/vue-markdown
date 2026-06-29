@@ -97,7 +97,7 @@ export function useAvatarSdk() {
     interativeRef.value = new AvatarPlatform();
     // 调用SDK实例的setApiInfo方法，配置API服务参数
     interativeRef.value.setApiInfo({
-      serverUrl: 'wss://avatar.cn-huadong-1.xf-yun.com/v1/interact', // WebSocket服务器地址
+      serverUrl: '', // 我方网关 WSS 地址，由环境变量或网关配置注入
       appId: '', // 应用ID，用于标识应用
       apiKey: '', // API密钥，用于身份验证
       apiSecret: '', // API密钥，用于安全验证

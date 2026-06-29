@@ -9,6 +9,11 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [vue(), vueJsx(), cssInjectedByJsPlugin()],
     base: VITE_BASE_URL,
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, 'src')
+      }
+    },
     build: {
       lib: {
         entry: path.resolve(__dirname, 'src/main.ts'),

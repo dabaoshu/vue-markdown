@@ -1,4 +1,5 @@
 import { MERMAID_COMPLEX_SAMPLES_MARKDOWN } from './mermaidFlowExamples';
+import { MERMAID_README_DEMO_MARKDOWN } from './mermaidReadmeExamples';
 
 /**
  * 演示 Tab 标识，与示例内容键一致
@@ -9,6 +10,7 @@ export type DemoTabId =
   | 'math'
   | 'code'
   | 'diagrams'
+  | 'mermaid'
   | 'mermaidRoundTrip'
   | 'table'
   | 'think'
@@ -20,7 +22,7 @@ export type DemoTabId =
 export interface DemoTabMeta {
   id: DemoTabId;
   label: string;
-}
+}  
 
 /**
  * 单个演示 Tab 的完整配置
@@ -45,7 +47,8 @@ const DEMO_TAB_CONFIG: Record<DemoTabId, DemoTabConfig> = {
 | GFM 与排版 | \`remark-gfm\`、\`remark-breaks\` |
 | 数学公式 | \`remark-math\` + \`rehype-katex\`（\`math.strict: false\`） |
 | 代码高亮 | \`CodeHighLight\`（\`CodeBlock\` 组件） |
-| 图表 | \`rehypeMermaid\`、\`rehypePlantuml\`、\`rehypeInfographic\` |
+| 图表 | 复杂 Mermaid 流程图样例 |
+| Mermaid 插件 | \`rehypeMermaid\` readme 回归清单（双引擎 / meta） |
 | 表格 | \`tableNodeParse\` + Element Plus \`ElTable\` |
 | Think 与自定义标签 | \`remarkThink\`（\`customElements\`）+ \`MergeThinkRemark\` 分组 |
 | 表单模板 | \`:::form\` 指令块 + JSON 模板 |
@@ -129,9 +132,18 @@ pnpm install && pnpm run dev
 
   diagrams: {
     label: '图表',
-    markdown: `# 图表插件（rehypeMermaid）
+    markdown: `# 复杂 Mermaid 样例
+
+侧重大体量 \`flowchart\` / \`sequenceDiagram\` 等（官方 \`mermaid\` 引擎）。
+
+块级 \`engine=beautiful\`、ASCII、meta 覆盖等请切换到 **Mermaid 插件** Tab。
+
 ${MERMAID_COMPLEX_SAMPLES_MARKDOWN}
 `
+  },
+  mermaid: {
+    label: 'Mermaid 插件',
+    markdown: MERMAID_README_DEMO_MARKDOWN
   },
   mermaidRoundTrip: {
     label: 'Mermaid RoundTrip',
@@ -270,6 +282,7 @@ const DEMO_TAB_ORDER: DemoTabId[] = [
   'math',
   'code',
   'diagrams',
+  'mermaid',
   'mermaidRoundTrip',
   'table',
   'think',
