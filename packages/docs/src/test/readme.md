@@ -16,6 +16,10 @@
 | 插件 | 目录 | 页面 | CLI |
 | --- | --- | --- | --- |
 | remark-think | `remark-think/` | `/test/remark-think` | `pnpm --filter @nnnb/docs test:remark-think` |
+| remark-gfm | `remark-gfm/` | `/test/remark-gfm` | `pnpm --filter @nnnb/docs test:remark-gfm` |
+| remark-math | `remark-math/` | `/test/remark-math` | `pnpm --filter @nnnb/docs test:remark-math` |
+| code-highlight | `code-highlight/` | `/test/code-highlight` | `pnpm --filter @nnnb/docs test:code-highlight` |
+| rehype-mermaid | `rehype-mermaid/` | `/test/rehype-mermaid` | `pnpm --filter @nnnb/docs test:rehype-mermaid` |
 
 ## 目录模板
 

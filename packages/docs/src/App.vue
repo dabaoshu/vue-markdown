@@ -10,11 +10,39 @@
           在线 Demo
         </RouterLink>
         <RouterLink
+          to="/test/remark-gfm"
+          class="docs-nav-link"
+          active-class="is-active"
+        >
+          GFM
+        </RouterLink>
+        <RouterLink
+          to="/test/remark-math"
+          class="docs-nav-link"
+          active-class="is-active"
+        >
+          Math
+        </RouterLink>
+        <RouterLink
+          to="/test/code-highlight"
+          class="docs-nav-link"
+          active-class="is-active"
+        >
+          Code
+        </RouterLink>
+        <RouterLink
+          to="/test/rehype-mermaid"
+          class="docs-nav-link"
+          active-class="is-active"
+        >
+          Mermaid
+        </RouterLink>
+        <RouterLink
           to="/test/remark-think"
           class="docs-nav-link"
           active-class="is-active"
         >
-          Think 测试
+          Think
         </RouterLink>
         <a
           class="docs-nav-link docs-nav-link--external"
@@ -43,8 +71,18 @@ import { useRoute } from 'vue-router';
  * 文档站点根布局：顶栏导航 + 内容区 + 页脚
  */
 const route = useRoute();
+const TEST_ROUTE_NAMES = new Set([
+  'RemarkThinkTest',
+  'RemarkGfmTest',
+  'RemarkMathTest',
+  'CodeHighlightTest',
+  'RehypeMermaidTest'
+]);
+
 const isWidePage = computed(
-  () => route.name === 'Demo' || route.name === 'RemarkThinkTest'
+  () =>
+    route.name === 'Demo' ||
+    (typeof route.name === 'string' && TEST_ROUTE_NAMES.has(route.name))
 );
 </script>
 
