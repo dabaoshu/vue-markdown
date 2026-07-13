@@ -9,6 +9,13 @@
         <RouterLink to="/demo" class="docs-nav-link" active-class="is-active">
           在线 Demo
         </RouterLink>
+        <RouterLink
+          to="/test/remark-think"
+          class="docs-nav-link"
+          active-class="is-active"
+        >
+          Think 测试
+        </RouterLink>
         <a
           class="docs-nav-link docs-nav-link--external"
           href="https://github.com/dabaoshu/vue-markdown"
@@ -19,7 +26,7 @@
         </a>
       </nav>
     </header>
-    <main class="docs-main" :class="{ 'docs-main--wide': isDemoPage }">
+    <main class="docs-main" :class="{ 'docs-main--wide': isWidePage }">
       <RouterView />
     </main>
     <footer class="docs-footer">
@@ -36,7 +43,9 @@ import { useRoute } from 'vue-router';
  * 文档站点根布局：顶栏导航 + 内容区 + 页脚
  */
 const route = useRoute();
-const isDemoPage = computed(() => route.name === 'Demo');
+const isWidePage = computed(
+  () => route.name === 'Demo' || route.name === 'RemarkThinkTest'
+);
 </script>
 
 <style scoped>

@@ -17,6 +17,11 @@ export const router = createRouter({
       component: () => import('@/pages/Demo.vue')
     },
     {
+      path: '/test/remark-think',
+      name: 'RemarkThinkTest',
+      component: () => import('@/pages/RemarkThinkTest.vue')
+    },
+    {
       path: '/:pathMatch(.*)*',
       redirect: '/'
     }

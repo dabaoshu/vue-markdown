@@ -106,7 +106,7 @@ export const thinkFlow = (options?) => {
 
     /**
      * 开始标签后的处理
-     * 处理换行或文件结束的情况
+     * 支持换行、文件结束，以及 opening tag 后同一行直接跟内容。
      */
     function afterOpenSequence(code) {
       // 检查是否遇到文件结束符或换行符,如果是则退出围栏标记并继续处理
@@ -123,8 +123,10 @@ export const thinkFlow = (options?) => {
         // - after: 如果失败,进入结束处理
         return effects.attempt(nonLazyContinuation, beforeContent, after)(code);
       }
-      // 如果既不是文件结束也不是换行,则解析失败
-      return nok(code);
+
+      // opening tag 后同一行直接出现内容，例如 `<tag> text` 或 `<tag>text`
+      effects.exit(ThinkEvent.thinkFlowFence);
+      return beforeContent(code);
     }
 
     /**
@@ -158,11 +160,19 @@ export const thinkFlow = (options?) => {
 
     /**
      * 处理内容块之前
-     * 处理文件结束或换行的情况
+     * 处理文件结束、换行，以及同一行内的 closing tag。
      */
     function beforeContentChunk(code) {
       if (code === codes.eof) {
         return after(code);
+      }
+
+      if (code === codes.lessThan) {
+        return effects.attempt(
+          { tokenize: tokenizeClosingFence, partial: true },
+          after,
+          contentStartWithLessThan
+        )(code);
       }
 
       if (markdownLineEnding(code)) {
@@ -174,11 +184,34 @@ export const thinkFlow = (options?) => {
     }
 
     /**
+     * `<` 不是 closing tag 时，将其作为内容字符继续消费。
+     */
+    function contentStartWithLessThan(code) {
+      effects.enter(ThinkEvent.thinkFlowValue);
+      effects.consume(code);
+      return contentChunk;
+    }
+
+    /**
      * 解析内容块
-     * 逐字符处理内容直到遇到换行或文件结束
+     * 逐字符处理内容，直到换行、文件结束或遇到 closing tag。
      */
     function contentChunk(code) {
-      if (code === codes.eof || markdownLineEnding(code)) {
+      if (code === codes.eof) {
+        effects.exit(ThinkEvent.thinkFlowValue);
+        return beforeContentChunk(code);
+      }
+
+      if (code === codes.lessThan) {
+        effects.exit(ThinkEvent.thinkFlowValue);
+        return effects.attempt(
+          { tokenize: tokenizeClosingFence, partial: true },
+          after,
+          contentStartWithLessThan
+        )(code);
+      }
+
+      if (markdownLineEnding(code)) {
         effects.exit(ThinkEvent.thinkFlowValue);
         return beforeContentChunk(code);
       }

@@ -222,8 +222,18 @@ flowchart LR
 第二条块级思考：与上一条同属根级时会进入 thinkGroup 容器。
 </think>
 
+## 块级 think（opening tag 后同一行带内容）
+
+<think> 同一行先出现空格再写内容
+</think>
+
+## 块级 think（单行紧凑）
+
+<think>单行紧凑写法，opening/closing 同在一段</think>
+
 ## 行内 think
 行内示例：请在此处插入 <think>简短行内思考</think> 再继续正文。
+行内紧凑：<think>紧凑行内</think>；行内带空格：<think> 带空格的行内 </think>。
 
 ## custom / other（customElements）
 <custom>
