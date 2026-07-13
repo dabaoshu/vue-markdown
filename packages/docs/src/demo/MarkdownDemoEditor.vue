@@ -7,6 +7,7 @@
         <p class="demo-workbench__desc">{{ activeTabMeta?.description }}</p>
       </div>
       <div class="demo-workbench__status">
+        <span v-if="isStreaming" class="status-badge status-badge--streaming">流式输出中</span>
         <span v-if="isDirty" class="status-badge status-badge--dirty">已修改</span>
         <span class="status-badge">{{ lineCount }} 行 · {{ charCount }} 字</span>
       </div>
@@ -54,7 +55,38 @@
           </button>
         </div>
       </div>
+
+      <div class="toolbar-divider" />
+
+      <div class="toolbar-group">
+        <span class="toolbar-group__label">测试</span>
+        <button
+          type="button"
+          class="tool-btn tool-btn--stream"
+          :class="{ 'is-active': isStreaming }"
+          :disabled="isStreaming"
+          title="以当前编辑器内容模拟逐块流式写入，观察预览实时渲染"
+          @click="startStreamInput"
+        >
+          流式输入
+        </button>
+        <button
+          type="button"
+          class="tool-btn"
+          :disabled="!isStreaming"
+          title="停止流式输出"
+          @click="stopStreamInput"
+        >
+          停止
+        </button>
+      </div>
     </div>
+
+    <DemoFeaturePanel
+      v-model="featureConfig"
+      :is-default="isFeatureDefault"
+      @reset="resetFeatureConfig"
+    />
 
     <!-- 主体：侧栏 + 编辑/预览 -->
     <div class="demo-workbench__body">
@@ -94,7 +126,15 @@
           <div class="pane__head">
             <span class="pane__label">实时预览</span>
             <span class="pane__hint">
-              {{ previewPending ? '渲染中…' : '与 @nnnb/markdown 推荐配置一致' }}
+              {{
+                isStreaming
+                  ? '流式实时预览'
+                  : previewPending
+                    ? '渲染中…'
+                    : isFeatureDefault
+                      ? '与当前示例推荐配置一致'
+                      : '自定义特性配置预览'
+              }}
             </span>
           </div>
           <div class="pane__body preview-scroll">
@@ -102,7 +142,11 @@
               <DemoLoading message="正在载入示例…" />
             </div>
             <div v-else-if="previewReady" class="preview-content">
-              <VueMarkdown :source="previewCode" />
+              <VueMarkdown
+                :key="previewFeatureKey"
+                :source="previewCode"
+                :features="featureConfig"
+              />
             </div>
             <div v-else class="preview-content preview-content--loading">
               <DemoLoading message="正在准备预览…" />
@@ -117,14 +161,25 @@
 
 <script lang="ts" setup>
 import { ref, shallowRef, computed, onMounted, onBeforeUnmount, watch, defineAsyncComponent } from 'vue';
+import { EditorView } from '@codemirror/view';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import { EditorHelper } from './editorHelper';
 import { getDemoTabMeta, type DemoTabId } from './demoData';
 import { loadDemoMarkdown } from './demoMarkdownLoader';
 import { createShortcuts, createToolbarItems } from './editorActions';
+import {
+  createStreamInputController,
+  type StreamInputController
+} from './streamInputSimulator';
 import DemoSidebar from './DemoSidebar.vue';
 import DemoMobileTabs from './DemoMobileTabs.vue';
 import DemoLoading from './DemoLoading.vue';
+import DemoFeaturePanel from './DemoFeaturePanel.vue';
+import {
+  getDefaultFeaturesForTab,
+  isDefaultFeaturesForTab,
+  type DemoMarkdownFeatures
+} from './demoFeatureConfig';
 
 /** 预览 Markdown 封装（含 Mermaid 等重依赖）异步加载 */
 const VueMarkdown = defineAsyncComponent({
@@ -176,7 +231,11 @@ const editorReady = ref(false);
 const contentLoaded = ref(false);
 const previewReady = ref(false);
 const copyDone = ref(false);
+const isStreaming = ref(false);
+const featureConfig = ref<DemoMarkdownFeatures>(getDefaultFeaturesForTab(props.activeTab));
 const editorHelper = new EditorHelper();
+
+let streamController: StreamInputController | undefined;
 
 let previewDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 let copyResetTimer: ReturnType<typeof setTimeout> | undefined;
@@ -185,14 +244,97 @@ let previewMountIdleId: number | undefined;
 const isDirty = computed(() => code.value !== baselineCode.value);
 const lineCount = computed(() => code.value.split('\n').length);
 const charCount = computed(() => code.value.length);
+const isFeatureDefault = computed(() =>
+  isDefaultFeaturesForTab(props.activeTab, featureConfig.value)
+);
+/** 特性变更时强制重建预览组件，确保插件/组件映射生效 */
+const previewFeatureKey = computed(() => JSON.stringify(featureConfig.value));
 
 /**
- * 防抖更新预览区 Markdown，避免 Mermaid 等重渲染卡顿
- * @param value 编辑器最新内容
+ * 恢复当前 Tab 的推荐特性配置。
  */
-function schedulePreviewUpdate(value: string) {
-  previewPending.value = true;
+function resetFeatureConfig() {
+  featureConfig.value = getDefaultFeaturesForTab(props.activeTab);
+}
+
+/**
+ * 将编辑器滚动到文档末尾，便于观察流式追加内容。
+ */
+function scrollEditorToEnd() {
+  const view = editorView.value;
+  if (!view) {
+    return;
+  }
+
+  view.dispatch({
+    effects: EditorView.scrollIntoView(view.state.doc.length, { y: 'nearest' })
+  });
+}
+
+/**
+ * 停止流式输入模拟。
+ */
+function stopStreamInput() {
+  streamController?.stop();
+  streamController = undefined;
+  isStreaming.value = false;
+}
+
+/**
+ * 开始流式输入模拟：清空编辑器后，将当前内容逐块回放写入。
+ */
+function startStreamInput() {
+  if (isStreaming.value) {
+    return;
+  }
+
+  const sourceText = code.value;
+  if (!sourceText.trim()) {
+    ElMessage.warning('当前编辑器内容为空，请先载入或编辑 Markdown');
+    return;
+  }
+
+  stopStreamInput();
+  isStreaming.value = true;
+  code.value = '';
+  applyPreviewUpdate('', true);
+  contentLoaded.value = true;
+  schedulePreviewMount();
+
+  streamController = createStreamInputController(sourceText, {
+    chunkMin: 2,
+    chunkMax: 10,
+    intervalMs: 45,
+    onChunk: (partialText) => {
+      code.value = partialText;
+      scrollEditorToEnd();
+    },
+    onComplete: () => {
+      isStreaming.value = false;
+      streamController = undefined;
+      ElMessage.success('流式输入已完成');
+    }
+  });
+
+  streamController.start();
+}
+
+/**
+ * 更新预览区 Markdown；流式模式下立即同步，普通编辑走防抖。
+ * @param value 编辑器最新内容
+ * @param immediate 是否跳过防抖立即更新
+ */
+function applyPreviewUpdate(value: string, immediate = false) {
   clearTimeout(previewDebounceTimer);
+  previewDebounceTimer = undefined;
+
+  if (immediate || isStreaming.value) {
+    previewCode.value = value;
+    previewPending.value = false;
+    return;
+  }
+
+  previewPending.value = true;
   previewDebounceTimer = setTimeout(() => {
     previewCode.value = value;
     previewPending.value = false;
@@ -244,6 +386,8 @@ function schedulePreviewMount() {
  * @param id Tab 标识
  */
 async function loadTabContent(id: DemoTabId) {
+  stopStreamInput();
+  featureConfig.value = getDefaultFeaturesForTab(id);
   tabLoading.value = true;
   contentLoaded.value = false;
   previewReady.value = false;
@@ -253,7 +397,7 @@ async function loadTabContent(id: DemoTabId) {
     const sample = await loadDemoMarkdown(id);
     code.value = sample;
     baselineCode.value = sample;
-    schedulePreviewUpdate(sample);
+    applyPreviewUpdate(sample);
     contentLoaded.value = true;
     schedulePreviewMount();
   } finally {
@@ -267,6 +411,10 @@ async function loadTabContent(id: DemoTabId) {
  */
 async function handleTabChange(nextTab: DemoTabId) {
   if (nextTab === props.activeTab) return;
+
+  if (isStreaming.value) {
+    stopStreamInput();
+  }
 
   if (isDirty.value) {
     try {
@@ -310,7 +458,7 @@ watch(
   { immediate: true }
 );
 
-watch(code, (value) => schedulePreviewUpdate(value));
+watch(code, (value) => applyPreviewUpdate(value));
 
 function handleReady(payload: { view: import('@codemirror/view').EditorView }) {
   editorView.value = payload.view;
@@ -345,6 +493,7 @@ onBeforeUnmount(() => {
   clearTimeout(previewDebounceTimer);
   clearTimeout(copyResetTimer);
   cancelPreviewMount();
+  stopStreamInput();
 });
 </script>
 
@@ -403,6 +552,11 @@ onBeforeUnmount(() => {
 .status-badge--dirty {
   color: #b45309;
   background: #fffbeb;
+}
+
+.status-badge--streaming {
+  color: #1d4ed8;
+  background: #dbeafe;
 }
 
 .demo-workbench__toolbar {
@@ -481,6 +635,12 @@ onBeforeUnmount(() => {
 .tool-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.tool-btn--stream.is-active {
+  color: #2563eb;
+  border-color: #93c5fd;
+  background: #eff6ff;
 }
 
 .format-btns {

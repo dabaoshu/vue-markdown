@@ -9,12 +9,12 @@ import flow from 'lodash/flow';
 type VueMarkdownProps2 = {
   /**自定义元素 remarkThink*/
   customElements?: string[];
-  /**remark 选项*/
+  /**remark 选项；传 null 表示关闭数学公式 */
   math?: {
     strict?: boolean;
     remarkOptions?: any;
     rehypeOptions?: any;
-  };
+  } | null;
 };
 export const VueMarkdownRender = (o) =>
   CreateVMarkdown(o, { Fragment, jsx, jsxs });
@@ -95,28 +95,26 @@ export const VueMarkdown = defineComponent({
       };
     });
 
-    const { components: props_components, source, ..._props } = props;
-
     const children = computed(() => {
       const { default: defaultSlot } = slots;
-      const children =
+      const slotChildren =
         (defaultSlot && (defaultSlot?.()[0]?.children as string)) || '';
-      if (typeof children !== 'string') {
+      if (slotChildren && typeof slotChildren !== 'string') {
         unreachable(
           'Unexpected value `' +
-            children +
+            slotChildren +
             '` for `children` prop, expected `string`'
         );
       }
-      return props.source || children;
+      return props.source || slotChildren;
     });
 
     const mergeProps = computed(() => {
       const flows = [];
-      const remarkPlugins = props.remarkPlugins || [];
-      const rehypePlugins = props.rehypePlugins || [];
+      const remarkPlugins = [...(props.remarkPlugins || [])];
+      const rehypePlugins = [...(props.rehypePlugins || [])];
       const math = props.math;
-      if (!!math) {
+      if (math) {
         const {
           flow: mathFlow,
           rehypePlugins: mathRehypePlugins,
@@ -129,7 +127,7 @@ export const VueMarkdown = defineComponent({
         remarkPlugins.push(mathRemarkPlugins);
       }
 
-      if (props.customElements) {
+      if (props.customElements?.length) {
         const { remarkPlugins: thinkRemarkPlugins } = processThink({
           tags: props.customElements
         });
@@ -150,7 +148,15 @@ export const VueMarkdown = defineComponent({
         <VueMarkdownRender
           className={attrs.class as string}
           components={components.value}
-          {..._props}
+          allowElement={props.allowElement}
+          allowedElements={props.allowedElements}
+          disallowedElements={props.disallowedElements}
+          remarkRehypeOptions={props.remarkRehypeOptions}
+          skipHtml={props.skipHtml}
+          unwrapDisallowed={props.unwrapDisallowed}
+          urlTransform={props.urlTransform}
+          customElements={props.customElements}
+          math={props.math}
           children={source}
           remarkPlugins={remarkPlugins}
           rehypePlugins={rehypePlugins}

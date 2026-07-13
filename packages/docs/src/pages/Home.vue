@@ -6,13 +6,24 @@ import type { DemoTabId } from '@/demo/demoData';
  * 特性卡片定义
  */
 interface FeatureCard {
-  id: DemoTabId | 'iframe';
+  id: DemoTabId | string;
   title: string;
   description: string;
   tags: string[];
   snippet: string;
   /** 无对应 Demo Tab 时不显示跳转按钮 */
   demoTab?: DemoTabId;
+}
+
+/**
+ * 后续迭代规划特性（暂无在线 Demo）
+ */
+interface RoadmapFeature {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  snippet?: string;
 }
 
 const router = useRouter();
@@ -98,16 +109,6 @@ components={{ think: ThinkElement }}`
 const { columns, data } = tableNodeParse(node);`
   },
   {
-    id: 'iframe',
-    title: 'Iframe 嵌入',
-    description:
-      '通用 iframe 嵌入能力，支持 postMessage 初始化与无感更新，业务协议可在 simple 中二次封装。',
-    tags: ['IframeEmbed', 'postMessage'],
-    snippet: `import { IframeEmbed } from '@nnnb/markdown/vue-ui';
-
-<IframeEmbed :src="url" :params="params" />`
-  },
-  {
     id: 'overview',
     demoTab: 'overview',
     title: '引擎 / UI 分层',
@@ -116,6 +117,19 @@ const { columns, data } = tableNodeParse(node);`
     tags: ['engine-only', 'tree-shaking'],
     snippet: `import { rehypeMermaid } from '@nnnb/markdown';
 import { VueMarkdown } from '@nnnb/markdown/vue-ui';`
+  }
+];
+
+/** 后续版本规划中的能力 */
+const roadmapFeatures: RoadmapFeature[] = [
+  {
+    id: 'iframe',
+    title: 'Iframe 嵌入',
+    description:
+      '计划在后续版本提供通用 iframe 嵌入组件：URL / postMessage 双通道传参、无感参数更新与业务协议二次封装。当前可在 simple 包内查看预研实现。',
+    tags: ['后续迭代', 'IframeEmbed', 'postMessage'],
+    snippet: `// 规划 API（尚未纳入 @nnnb/markdown/vue-ui）
+<IframeEmbed :src="url" :params="params" />`
   }
 ];
 
@@ -191,6 +205,28 @@ function canOpenDemo(feature: FeatureCard): feature is FeatureCard & { demoTab: 
           >
             在 Demo 中体验 →
           </button>
+        </article>
+      </div>
+    </section>
+
+    <section class="roadmap">
+      <h2 class="section-title">后续迭代</h2>
+      <p class="roadmap-desc">以下能力已在路线图中，将在后续版本纳入正式导出与文档 Demo。</p>
+      <div class="feature-grid">
+        <article
+          v-for="feature in roadmapFeatures"
+          :key="feature.id"
+          class="feature-card feature-card--roadmap"
+        >
+          <div class="feature-card__tags">
+            <span class="tag tag--roadmap">后续迭代</span>
+            <span v-for="tag in feature.tags.filter((t) => t !== '后续迭代')" :key="tag" class="tag">
+              {{ tag }}
+            </span>
+          </div>
+          <h3 class="feature-card__title">{{ feature.title }}</h3>
+          <p class="feature-card__desc">{{ feature.description }}</p>
+          <pre v-if="feature.snippet" class="feature-card__code"><code>{{ feature.snippet }}</code></pre>
         </article>
       </div>
     </section>
@@ -320,6 +356,17 @@ function canOpenDemo(feature: FeatureCard): feature is FeatureCard & { demoTab: 
   margin-bottom: 48px;
 }
 
+.roadmap {
+  margin-bottom: 48px;
+}
+
+.roadmap-desc {
+  margin: -12px 0 24px;
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
 .feature-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -341,6 +388,16 @@ function canOpenDemo(feature: FeatureCard): feature is FeatureCard & { demoTab: 
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
+.feature-card--roadmap {
+  background: #fafafa;
+  border-style: dashed;
+}
+
+.feature-card--roadmap:hover {
+  border-color: #cbd5e1;
+  box-shadow: none;
+}
+
 .feature-card__tags {
   display: flex;
   flex-wrap: wrap;
@@ -355,6 +412,11 @@ function canOpenDemo(feature: FeatureCard): feature is FeatureCard & { demoTab: 
   color: #64748b;
   background: #f1f5f9;
   border-radius: 4px;
+}
+
+.tag--roadmap {
+  color: #7c3aed;
+  background: #f5f3ff;
 }
 
 .feature-card__title {
