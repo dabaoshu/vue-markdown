@@ -1,8 +1,15 @@
 <script lang="ts" setup>
-import { computed, watch } from 'vue';
+import { computed, watch, defineAsyncComponent } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import MarkdownDemoEditor from '@/demo/MarkdownDemoEditor.vue';
 import { demoTabList, type DemoTabId } from '@/demo/demoData';
+import DemoLoading from '@/demo/DemoLoading.vue';
+
+/** Demo 编辑器体积大，路由级异步加载并显示占位 */
+const MarkdownDemoEditor = defineAsyncComponent({
+  loader: () => import('@/demo/MarkdownDemoEditor.vue'),
+  loadingComponent: DemoLoading,
+  delay: 0
+});
 
 const route = useRoute();
 const router = useRouter();

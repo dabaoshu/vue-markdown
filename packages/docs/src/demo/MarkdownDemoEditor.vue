@@ -81,15 +81,12 @@
             <span class="pane__hint">Tab 缩进 · Ctrl+B/I 快捷键</span>
           </div>
           <div class="pane__body editor-codemirror" dir="ltr">
-            <Codemirror
+            <DemoCodeMirror
+              v-if="editorReady"
               v-model="code"
-              placeholder="在此编辑 Markdown…"
-              :style="{ height: '100%' }"
-              :indent-with-tab="true"
-              :tab-size="2"
-              :extensions="extensions"
               @ready="handleReady"
             />
+            <DemoLoading v-else message="正在加载编辑器…" />
           </div>
         </section>
 
@@ -101,8 +98,14 @@
             </span>
           </div>
           <div class="pane__body preview-scroll">
-            <div class="preview-content">
+            <div v-if="tabLoading" class="preview-content preview-content--loading">
+              <DemoLoading message="正在载入示例…" />
+            </div>
+            <div v-else-if="previewReady" class="preview-content">
               <VueMarkdown :source="previewCode" />
+            </div>
+            <div v-else class="preview-content preview-content--loading">
+              <DemoLoading message="正在准备预览…" />
             </div>
           </div>
         </section>
@@ -113,22 +116,29 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, shallowRef, computed, onMounted, onBeforeUnmount, watch } from 'vue';
-import { Codemirror } from 'vue-codemirror';
-import { markdown } from '@codemirror/lang-markdown';
-import { EditorView, keymap } from '@codemirror/view';
-import { defaultKeymap, indentWithTab } from '@codemirror/commands';
+import { ref, shallowRef, computed, onMounted, onBeforeUnmount, watch, defineAsyncComponent } from 'vue';
 import { ElMessageBox, ElMessage } from 'element-plus';
-import VueMarkdown from '@/components/markdown';
 import { EditorHelper } from './editorHelper';
-import {
-  DEMO_MARKDOWN,
-  getDemoTabMeta,
-  type DemoTabId
-} from './demoData';
+import { getDemoTabMeta, type DemoTabId } from './demoData';
+import { loadDemoMarkdown } from './demoMarkdownLoader';
 import { createShortcuts, createToolbarItems } from './editorActions';
 import DemoSidebar from './DemoSidebar.vue';
 import DemoMobileTabs from './DemoMobileTabs.vue';
+import DemoLoading from './DemoLoading.vue';
+
+/** 预览 Markdown 封装（含 Mermaid 等重依赖）异步加载 */
+const VueMarkdown = defineAsyncComponent({
+  loader: () => import('@/components/markdown'),
+  loadingComponent: DemoLoading,
+  delay: 80
+});
+
+/** CodeMirror 编辑器异步加载 */
+const DemoCodeMirror = defineAsyncComponent({
+  loader: () => import('./DemoCodeMirror.vue'),
+  loadingComponent: DemoLoading,
+  delay: 80
+});
 
 /** 预览区布局模式 */
 type ViewMode = 'split' | 'editor' | 'preview';
@@ -155,35 +165,26 @@ const activeTabModel = computed({
 const activeTabMeta = computed(() => getDemoTabMeta(props.activeTab));
 const viewMode = ref<ViewMode>('split');
 const sidebarCollapsed = ref(false);
-const editorView = shallowRef<EditorView>();
-const code = ref(DEMO_MARKDOWN.overview);
-const baselineCode = ref(DEMO_MARKDOWN.overview);
-const previewCode = ref(DEMO_MARKDOWN.overview);
+const editorView = shallowRef<import('@codemirror/view').EditorView>();
+const code = ref('');
+const baselineCode = ref('');
+const previewCode = ref('');
 const previewPending = ref(false);
+const tabLoading = ref(false);
+const editorReady = ref(false);
+/** 示例 Markdown 已载入，可与编辑器错峰挂载预览 */
+const contentLoaded = ref(false);
+const previewReady = ref(false);
 const copyDone = ref(false);
 const editorHelper = new EditorHelper();
 
 let previewDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 let copyResetTimer: ReturnType<typeof setTimeout> | undefined;
+let previewMountIdleId: number | undefined;
 
 const isDirty = computed(() => code.value !== baselineCode.value);
 const lineCount = computed(() => code.value.split('\n').length);
 const charCount = computed(() => code.value.length);
-
-const editorTheme = EditorView.theme({
-  '&': { direction: 'ltr', height: '100%' },
-  '.cm-scroller': { direction: 'ltr', fontFamily: 'Consolas, Monaco, monospace', fontSize: '13px' },
-  '.cm-content': { direction: 'ltr', unicodeBidi: 'plaintext', padding: '12px 0' },
-  '.cm-gutters': { direction: 'ltr', background: '#f8fafc', borderRight: '1px solid #e2e8f0' },
-  '.cm-activeLine': { background: '#f1f5f9' }
-});
-
-const extensions = [
-  markdown(),
-  EditorView.lineWrapping,
-  editorTheme,
-  keymap.of([indentWithTab, ...defaultKeymap])
-];
 
 /**
  * 防抖更新预览区 Markdown，避免 Mermaid 等重渲染卡顿
@@ -195,19 +196,69 @@ function schedulePreviewUpdate(value: string) {
   previewDebounceTimer = setTimeout(() => {
     previewCode.value = value;
     previewPending.value = false;
-  }, 280);
+  }, 320);
+}
+
+/**
+ * 取消待执行的预览挂载，避免 Tab 快速切换时重复排队
+ */
+function cancelPreviewMount() {
+  if (previewMountIdleId === undefined) return;
+
+  if (typeof cancelIdleCallback === 'function') {
+    cancelIdleCallback(previewMountIdleId);
+  } else {
+    clearTimeout(previewMountIdleId);
+  }
+
+  previewMountIdleId = undefined;
+}
+
+/**
+ * 在编辑器就绪后 idle 挂载 VueMarkdown，避免与 CodeMirror 同时抢主线程
+ */
+function schedulePreviewMount() {
+  cancelPreviewMount();
+  previewReady.value = false;
+
+  if (!contentLoaded.value || !editorReady.value) {
+    return;
+  }
+
+  const mount = () => {
+    previewMountIdleId = undefined;
+    if (contentLoaded.value && editorReady.value) {
+      previewReady.value = true;
+    }
+  };
+
+  if (typeof requestIdleCallback === 'function') {
+    previewMountIdleId = requestIdleCallback(mount, { timeout: 700 });
+  } else {
+    previewMountIdleId = window.setTimeout(mount, 120);
+  }
 }
 
 /**
  * 载入指定 Tab 的示例内容
  * @param id Tab 标识
  */
-function loadTabContent(id: DemoTabId) {
-  const sample = DEMO_MARKDOWN[id];
-  if (!sample) return;
-  code.value = sample;
-  baselineCode.value = sample;
-  schedulePreviewUpdate(sample);
+async function loadTabContent(id: DemoTabId) {
+  tabLoading.value = true;
+  contentLoaded.value = false;
+  previewReady.value = false;
+  cancelPreviewMount();
+
+  try {
+    const sample = await loadDemoMarkdown(id);
+    code.value = sample;
+    baselineCode.value = sample;
+    schedulePreviewUpdate(sample);
+    contentLoaded.value = true;
+    schedulePreviewMount();
+  } finally {
+    tabLoading.value = false;
+  }
 }
 
 /**
@@ -261,7 +312,7 @@ watch(
 
 watch(code, (value) => schedulePreviewUpdate(value));
 
-function handleReady(payload: { view: EditorView }) {
+function handleReady(payload: { view: import('@codemirror/view').EditorView }) {
   editorView.value = payload.view;
   editorHelper.setEditorView(payload.view);
 }
@@ -275,12 +326,25 @@ function onGlobalKeydown(e: KeyboardEvent) {
 
 onMounted(() => {
   window.addEventListener('keydown', onGlobalKeydown);
+
+  /** 先渲染壳层，再 idle 挂载 CodeMirror；预览在编辑器就绪后二次 idle 挂载 */
+  const mountEditor = () => {
+    editorReady.value = true;
+    schedulePreviewMount();
+  };
+
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(mountEditor, { timeout: 400 });
+  } else {
+    window.setTimeout(mountEditor, 16);
+  }
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKeydown);
   clearTimeout(previewDebounceTimer);
   clearTimeout(copyResetTimer);
+  cancelPreviewMount();
 });
 </script>
 
@@ -540,6 +604,24 @@ onBeforeUnmount(() => {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   box-sizing: border-box;
+}
+
+.preview-content--loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  padding: 0;
+}
+
+.preview-content--loading :deep(.demo-loading) {
+  min-height: 200px;
+  padding: 12px;
+}
+
+.preview-content--loading :deep(.demo-loading__panel) {
+  box-shadow: none;
+  border: none;
 }
 
 :deep(.cm-editor) {

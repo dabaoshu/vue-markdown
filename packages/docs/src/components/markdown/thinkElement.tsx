@@ -1,84 +1,13 @@
 import { defineComponent } from 'vue';
-import { SKIP, visitParents } from 'unist-util-visit-parents';
-export function MergeThinkRehype(options) {
-  const settings = options;
-  const emptyClasses = '';
-  return function (tree, file) {
-    visitParents(tree, 'element', function (element, parents) {
-      console.log('element', element, parents);
-      let parent = parents[parents.length - 1];
-      let scope = element;
 
-      return SKIP;
-    });
-  };
-}
-
-const createThinkGroup = () => {
-  return {
-    type: 'thinkGroup',
-    children: [],
-    data: {
-      hProperties: {
-        loading: false,
-        className: 'thinkGroupClass'
-      },
-      hName: 'thinkGroup',
-      value: '',
-      loading: true
-    }
-  };
-};
-
-const getRealNode = (node) => {
-  return node;
-};
-
-export function MergeThinkRemark() {
-  let isGroup = false;
-  return (tree) => {
-    visitParents(tree, 'thinkFlow', (node, parents) => {
-      if (parents[0].type !== 'root') {
-        return;
-      }
-      let scope = node;
-
-      const rootParents = parents[0];
-      if (node.type === 'thinkFlow' && !isGroup) {
-        isGroup = true;
-        const thinkGroup = createThinkGroup();
-        const thinkGroupEle = getRealNode(thinkGroup);
-        thinkGroupEle.children.push(scope);
-        const index = rootParents.children.indexOf(scope);
-        rootParents.children.splice(index, 1, thinkGroup);
-        return SKIP;
-      } else if (isGroup) {
-        const thinkGroup = rootParents.children.find(
-          (n) => n.type === 'thinkGroup'
-        );
-        if (!thinkGroup) return SKIP;
-
-        const thinkGroupEle = getRealNode(thinkGroup);
-        thinkGroupEle.children.push(scope);
-        const index = rootParents.children.indexOf(scope);
-        rootParents.children.splice(index, 1, {
-          type: 'element',
-          meta: {},
-          value: '',
-          tagName: 'div',
-          properties: {},
-          children: []
-        });
-      }
-    });
-  };
-}
-
-const thinkElement = defineComponent({
+/**
+ * 单个 think 块渲染组件（Demo 业务 UI，对应 remarkThink 解析节点）。
+ */
+const ThinkElement = defineComponent({
+  name: 'ThinkElement',
   props: [],
-  setup(props, { slots, attrs }) {
+  setup(_props, { slots, attrs }) {
     return () => {
-      console.log('thinkElement_attrs', attrs);
       const pProps = attrs;
       return (
         <div
@@ -93,12 +22,14 @@ const thinkElement = defineComponent({
   }
 });
 
+/**
+ * 连续 thinkFlow 合并后的 thinkGroup 容器组件（Demo 业务 UI）。
+ */
 export const thinkGroupElementt = defineComponent({
   name: 'thinkGroupElementt',
   props: [],
-  setup(props, { slots, attrs }) {
+  setup(_props, { slots, attrs }) {
     return () => {
-      console.log('thinkGroupElementt', attrs);
       const pProps = attrs;
       return (
         <div {...pProps} class={'thinkGroupElementt'}>
@@ -112,4 +43,4 @@ export const thinkGroupElementt = defineComponent({
   }
 });
 
-export default thinkElement;
+export default ThinkElement;

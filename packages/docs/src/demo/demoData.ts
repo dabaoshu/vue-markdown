@@ -1,6 +1,3 @@
-import { MERMAID_COMPLEX_SAMPLES_MARKDOWN } from './mermaidFlowExamples';
-import { MERMAID_README_DEMO_MARKDOWN } from './mermaidReadmeExamples';
-
 /**
  * 演示 Tab 标识，与示例内容键一致
  */
@@ -147,18 +144,12 @@ pnpm install && pnpm run dev
 
   diagrams: {
     label: '图表',
-    markdown: `# 复杂 Mermaid 样例
-
-侧重大体量 \`flowchart\` / \`sequenceDiagram\` 等（官方 \`mermaid\` 引擎）。
-
-块级 \`engine=beautiful\`、ASCII、meta 覆盖等请切换到 **Mermaid 插件** Tab。
-
-${MERMAID_COMPLEX_SAMPLES_MARKDOWN}
-`
+    /** 大体积样例由 demoMarkdownLoader 按需加载 */
+    markdown: ''
   },
   mermaid: {
     label: 'Mermaid 插件',
-    markdown: MERMAID_README_DEMO_MARKDOWN
+    markdown: ''
   },
   mermaidRoundTrip: {
     label: 'Mermaid RoundTrip',

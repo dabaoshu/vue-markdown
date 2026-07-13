@@ -67,7 +67,11 @@ export function postIframeInitParams(
   targetOrigin = '*',
   messageTypes?: IframeMessageTypes
 ): void {
-  postIframeParams(iframeWindow, params, { targetOrigin, isUpdate: false, messageTypes });
+  postIframeParams(iframeWindow, params, {
+    targetOrigin,
+    isUpdate: false,
+    messageTypes
+  });
 }
 
 /**
@@ -79,7 +83,11 @@ export function postIframeUpdateParams(
   targetOrigin = '*',
   messageTypes?: IframeMessageTypes
 ): void {
-  postIframeParams(iframeWindow, params, { targetOrigin, isUpdate: true, messageTypes });
+  postIframeParams(iframeWindow, params, {
+    targetOrigin,
+    isUpdate: true,
+    messageTypes
+  });
 }
 
 /**

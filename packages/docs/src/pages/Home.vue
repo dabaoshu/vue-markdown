@@ -17,6 +17,19 @@ interface FeatureCard {
 
 const router = useRouter();
 
+/** 是否已开始预加载 Demo 相关 chunk */
+let demoPrefetchStarted = false;
+
+/**
+ * 预加载 Demo 页与编辑器 chunk，降低从 Home 跳转时的白屏/卡顿
+ */
+function prefetchDemoBundle() {
+  if (demoPrefetchStarted) return;
+  demoPrefetchStarted = true;
+  void import('@/pages/Demo.vue');
+  void import('@/demo/MarkdownDemoEditor.vue');
+}
+
 /** 核心能力展示卡片 */
 const features: FeatureCard[] = [
   {
@@ -111,6 +124,7 @@ import { VueMarkdown } from '@nnnb/markdown/vue-ui';`
  * @param tabId 演示 Tab 标识
  */
 function openDemo(tabId: DemoTabId) {
+  prefetchDemoBundle();
   router.push({ path: '/demo', query: { tab: tabId } });
 }
 
@@ -132,7 +146,14 @@ function canOpenDemo(feature: FeatureCard): feature is FeatureCard & { demoTab: 
         可扩展的 Markdown 渲染组件库：GFM、数学公式、代码高亮、Mermaid 图表、自定义标签，引擎与 UI 分层设计，按需引入。
       </p>
       <div class="hero-actions">
-        <RouterLink to="/demo" class="btn btn--primary">打开在线 Demo</RouterLink>
+        <RouterLink
+          to="/demo"
+          class="btn btn--primary"
+          @mouseenter="prefetchDemoBundle"
+          @focus="prefetchDemoBundle"
+        >
+          打开在线 Demo
+        </RouterLink>
         <a
           class="btn btn--ghost"
           href="https://github.com/dabaoshu/vue-markdown"
@@ -154,6 +175,7 @@ function canOpenDemo(feature: FeatureCard): feature is FeatureCard & { demoTab: 
           v-for="feature in features"
           :key="feature.id"
           class="feature-card"
+          @mouseenter="prefetchDemoBundle"
         >
           <div class="feature-card__tags">
             <span v-for="tag in feature.tags" :key="tag" class="tag">{{ tag }}</span>

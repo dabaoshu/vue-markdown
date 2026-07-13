@@ -1,5 +1,6 @@
 import { CodeHighLight } from '@nnnb/markdown/vue-ui';
-import styles from './index.module.scss';import { defineComponent } from 'vue';
+import styles from './index.module.scss';
+import { defineComponent } from 'vue';
 
 export const CodeBlock = defineComponent({
   name: 'CodeBlock',

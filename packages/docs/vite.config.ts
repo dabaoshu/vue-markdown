@@ -20,7 +20,38 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    target: 'es2020'
+    target: 'es2020',
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            if (id.includes('/demo/mermaid') || id.includes('code_mermaid')) {
+              return 'demo-mermaid';
+            }
+            if (id.includes('/demo/MarkdownDemoEditor') || id.includes('DemoCodeMirror')) {
+              return 'demo-editor';
+            }
+            if (id.includes('/components/markdown/')) {
+              return 'demo-markdown';
+            }
+            return undefined;
+          }
+          if (id.includes('mermaid') || id.includes('cytoscape')) {
+            return 'vendor-mermaid';
+          }
+          if (id.includes('@codemirror') || id.includes('codemirror')) {
+            return 'vendor-codemirror';
+          }
+          if (id.includes('katex')) {
+            return 'vendor-katex';
+          }
+          if (id.includes('element-plus')) {
+            return 'vendor-element-plus';
+          }
+          return undefined;
+        }
+      }
+    }
   },
   server: {
     port: 8002

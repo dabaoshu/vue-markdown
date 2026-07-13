@@ -1,16 +1,13 @@
 import { defineComponent } from 'vue';
 import { CodeBlock } from './codeBlock';
-import { tableNodeParse, rehypeMermaid } from '@nnnb/markdown';
+import { tableNodeParse, rehypeMermaid, MergeThinkRemark } from '@nnnb/markdown';
 import { VueMarkdown } from '@nnnb/markdown/vue-ui';
+import ThinkElement, { thinkGroupElementt } from './thinkElement';
 import RemarkBreaks from 'remark-breaks';
 import RemarkGfm from 'remark-gfm';
 import 'katex/dist/katex.min.css';
 import { ElTable, ElTableColumn } from 'element-plus';
 import MermaidInteractiveBlock from './code_mermaid_card';
-import ThinkElement, {
-  MergeThinkRemark,
-  thinkGroupElementt
-} from './thinkElement';
 import '../../../../components/markdown/markdown.module.scss';
 
 export default defineComponent({

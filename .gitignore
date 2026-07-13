@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+packages/components/remark-infographic/index.ts
+packages/components/remark-infographic/readme.md
+packages/components/remark-infographic/core/types.ts
+packages/components/remark-infographic/engine/rehypeInfographic.ts
+packages/components/remark-plantuml/index.ts
+packages/components/remark-plantuml/readme.md
+packages/components/remark-plantuml/core/types.ts
+packages/components/remark-plantuml/engine/rehypePlantuml.ts
