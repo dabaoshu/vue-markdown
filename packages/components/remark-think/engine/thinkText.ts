@@ -24,7 +24,10 @@ export function thinkText(options?: ThinkFlowOption): Construct {
   function tokenizeThinkText(effects: Effects, ok: State, nok: State): State {
     // 保存上下文和状态变量
     let currentTag = '';
-    let matchedTag = '';
+    /** 当前正在匹配 opening tag 的字符下标（首字符匹配后从 1 继续） */
+    let openTagIndex = 0;
+    /** 当前正在匹配 closing tag 的字符下标 */
+    let closeTagIndex = 0;
 
     return start;
 
@@ -39,7 +42,8 @@ export function thinkText(options?: ThinkFlowOption): Construct {
 
     function tagStart(code: number): State {
       currentTag = '';
-      matchedTag = '';
+      openTagIndex = 0;
+      closeTagIndex = 0;
       return openTag(code);
     }
 
@@ -50,20 +54,20 @@ export function thinkText(options?: ThinkFlowOption): Construct {
           if (code === getStrCode(tag[0])) {
             currentTag = tag;
             effects.consume(code);
+            openTagIndex = 1;
             return openTag;
           }
         }
         return nok(code);
       }
 
-      const nextIndex = matchedTag.length;
       // 继续匹配当前标签
-      if (code === getStrCode(currentTag[nextIndex])) {
+      if (code === getStrCode(currentTag[openTagIndex])) {
         effects.consume(code);
-        matchedTag += currentTag[nextIndex];
-        if (matchedTag.length === currentTag.length) {
+        if (openTagIndex === currentTag.length - 1) {
           return expectClosingBracket;
         }
+        openTagIndex++;
         return openTag;
       }
 
@@ -85,9 +89,11 @@ export function thinkText(options?: ThinkFlowOption): Construct {
       }
 
       // 检查结束标签开始
+      // 必须在本轮消费 '<'，否则 micromark(dev) 会断言 expected character to be consumed
       if (code === codes.lessThan) {
         (effects as any).enter('thinkTextSequence');
-        return closeTagStart;
+        effects.consume(code); // 已经消费 '<'
+        return closeTagSlash;
       }
 
       // 处理空格
@@ -128,16 +134,10 @@ export function thinkText(options?: ThinkFlowOption): Construct {
       return data;
     }
 
-    function closeTagStart(code: number): State {
-      // 已经消费 '<'
-      effects.consume(code);
-      return closeTagSlash;
-    }
-
     function closeTagSlash(code: number): State {
       if (code !== codes.slash) return nok(code); // 如果不是 '/' 返回失败
       effects.consume(code);
-      matchedTag = '';
+      closeTagIndex = 0;
       return closeTag;
     }
 
@@ -145,13 +145,12 @@ export function thinkText(options?: ThinkFlowOption): Construct {
       // 匹配结束标签文本，例如 </think>
       const tag = currentTag || tags[0];
 
-      const nextIndex = matchedTag.length;
-      if (code === getStrCode(tag[nextIndex])) {
+      if (code === getStrCode(tag[closeTagIndex])) {
         effects.consume(code);
-        matchedTag += tag[nextIndex];
-        if (matchedTag.length === tag.length) {
+        if (closeTagIndex === tag.length - 1) {
           return closeTagEnd;
         }
+        closeTagIndex++;
         return closeTag;
       }
 

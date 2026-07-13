@@ -58,6 +58,23 @@ type ThinkFlowOption = {
 - `tags`：可识别标签名集合，例如 `['think']`
 - `customTags`：保留字段，默认会回落为 `tags`
 
+## 支持的标签写法
+
+除换行块级写法外，也支持 opening tag 后同一行直接跟内容，以及单行紧凑写法：
+
+```md
+<think>
+多行块级
+</think>
+
+<think> 同一行带空格的内容
+</think>
+
+<think>单行紧凑内容</think>
+
+正文中的 <think>行内思考</think> 片段。
+```
+
 ## 设计约束
 
 - 引擎层不依赖 Vue/React 等框架运行时。

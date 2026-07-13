@@ -1,0 +1,30 @@
+---
+description: markdown 插件须提供 AST+UI 双层测试与 docs 可视化验收（不报错≠通过）
+globs: packages/docs/src/test/**/*,packages/docs/src/pages/*Test.vue,packages/components/**/remark-*/**/*,packages/components/**/rehype-*/**/*
+alwaysApply: false
+---
+
+# Components Plugin AST + UI Test Standard
+
+## 硬性标准
+
+1. **不报错 ≠ 通过**。插件验收必须同时覆盖：
+   - **AST**：结构/文本断言
+   - **UI**：真实挂载后的 DOM/可见文案断言
+2. 用例落在 `packages/docs/src/test/<plugin-id>/`，可视化页路由 `/test/<plugin-id>`。
+3. 综合通过条件：`parseOk && uiOk`。侧栏须同时展示 AST / UI 状态。
+4. Preview 按**本用例配置**接线；禁止用 Demo 全开特性替代精确配置。
+
+## 最低交付
+
+改动 remark/rehype/自定义语法时，默认交付：
+
+- `cases.ts` 数据驱动用例（含边界与负向）
+- CLI：`pnpm --filter @nnnb/docs test:<plugin-id>`（AST）
+- 测试页：隐藏批跑挂载 + DOM UI 检测
+- 正向用例默认断言：组件 class 存在、正文可见、**不泄露**原始 `<tag>` 文本
+
+## 参考
+
+- Skill：`.cursor/skills/components-plugin-ast-ui-test/SKILL.md`
+- 样板：`packages/docs/src/test/remark-think/`、`/test/remark-think`

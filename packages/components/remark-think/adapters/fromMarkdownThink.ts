@@ -153,17 +153,21 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
   }
 
   function handleInlineThinkOpen(token) {
-    // 行内节点直接作为 element 插入，不包裹 thinkFlow
+    // 行内节点使用 data.hName，确保 remark-rehype 能映射到自定义组件
+    const tagName = tags[0] || 'think';
     this.enter(
       {
-        type: 'element',
+        type: 'thinkInline',
         meta: {
           loading: true
         },
         value: '',
-        tagName: tags[0] || 'think',
-        properties: {
-          className: [`${tags[0] || 'think'}_content`]
+        tagName,
+        data: {
+          hName: tagName,
+          hProperties: {
+            className: [`${tagName}_content`]
+          }
         },
         children: []
       },
@@ -175,7 +179,7 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
     this.resume();
     const value = this.sliceSerialize(token);
     const node = this.stack[this.stack.length - 1];
-    if (!node || node.type !== 'element') return;
+    if (!node || node.type !== 'thinkInline') return;
     node.children.push({
       type: 'text',
       value
@@ -185,7 +189,7 @@ export function fromMarkdownThink(option: ThinkFlowOption) {
 
   function handleInlineThinkClose(token) {
     const node = this.stack[this.stack.length - 1];
-    if (node && node.type === 'element') {
+    if (node && node.type === 'thinkInline') {
       node.meta.loading = false;
     }
     this.exit(token);

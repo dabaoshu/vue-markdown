@@ -1,0 +1,385 @@
+/**
+ * AST + UI 测试页共用样式。
+ * 在 *Test.vue 中以非 scoped 方式引入，类名与 RemarkThinkTest 保持一致。
+ */
+
+.ast-ui-test-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: calc(100vh - 140px);
+}
+
+.ast-ui-test-page__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.ast-ui-test-page__intro h1 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+.ast-ui-test-page__intro p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.ast-ui-test-page .muted {
+  color: #94a3b8;
+}
+
+.ast-ui-test-page .is-pass {
+  color: #15803d;
+}
+
+.ast-ui-test-page .is-fail {
+  color: #b91c1c;
+}
+
+.ast-ui-test-page__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ast-ui-test-page .btn {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #fff;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ast-ui-test-page .btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.ast-ui-test-page .btn--ghost {
+  background: #fff;
+  color: #2563eb;
+}
+
+.ast-ui-test-page__body {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.ast-ui-test-page__sidebar,
+.ast-ui-test-page__detail,
+.ast-ui-test-page .panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.ast-ui-test-page__sidebar {
+  position: sticky;
+  top: 72px;
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+  padding: 12px;
+}
+
+.ast-ui-test-page .filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.ast-ui-test-page .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ast-ui-test-page .chip.is-active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.ast-ui-test-page .chip__count {
+  opacity: 0.7;
+}
+
+.ast-ui-test-page .case-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ast-ui-test-page .case-list__item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.ast-ui-test-page .case-list__item:hover {
+  background: #f8fafc;
+}
+
+.ast-ui-test-page .case-list__item.is-active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.ast-ui-test-page .case-list__status {
+  width: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.ast-ui-test-page .case-list__item.is-pass .case-list__status {
+  color: #16a34a;
+}
+
+.ast-ui-test-page .case-list__item.is-fail .case-list__status {
+  color: #dc2626;
+}
+
+.ast-ui-test-page .case-list__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.ast-ui-test-page .case-list__id {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: Consolas, Monaco, monospace;
+}
+
+.ast-ui-test-page .case-list__badges {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.ast-ui-test-page .case-list__badges span {
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ast-ui-test-page .case-list__badges .ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ast-ui-test-page .case-list__badges .bad {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.ast-ui-test-page .case-list__badges .pending {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.ast-ui-test-page__detail {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ast-ui-test-page .detail-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.ast-ui-test-page .detail-head h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+
+.ast-ui-test-page .detail-head__eyebrow {
+  font-size: 12px;
+  color: #94a3b8;
+  font-family: Consolas, Monaco, monospace;
+  margin-bottom: 4px;
+}
+
+.ast-ui-test-page .detail-head__desc {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.ast-ui-test-page .detail-badge {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.ast-ui-test-page .detail-badge.is-pass {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ast-ui-test-page .detail-badge.is-fail {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.ast-ui-test-page .detail-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ast-ui-test-page .flag {
+  font-size: 12px;
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: Consolas, Monaco, monospace;
+}
+
+.ast-ui-test-page .flag.is-pass {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ast-ui-test-page .flag.is-fail {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.ast-ui-test-page .detail-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+.ast-ui-test-page .detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ast-ui-test-page .panel {
+  overflow: hidden;
+}
+
+.ast-ui-test-page .panel__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  background: #f8fafc;
+}
+
+.ast-ui-test-page .panel__head--clickable {
+  cursor: pointer;
+  list-style: none;
+}
+
+.ast-ui-test-page .panel__head--clickable::-webkit-details-marker {
+  display: none;
+}
+
+.ast-ui-test-page .panel__hint {
+  font-size: 11px;
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+.ast-ui-test-page .panel__code {
+  margin: 0;
+  padding: 12px;
+  max-height: 360px;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 1.5;
+  background: #0f172a;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ast-ui-test-page .panel__preview {
+  padding: 14px;
+  min-height: 120px;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.ast-ui-test-page .panel--ast {
+  background: #fff;
+}
+
+.ast-ui-test-page .ui-batch {
+  position: absolute;
+  left: -10000px;
+  top: 0;
+  width: 800px;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.ast-ui-test-page .ui-batch__item {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 960px) {
+  .ast-ui-test-page__body,
+  .ast-ui-test-page .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ast-ui-test-page__sidebar {
+    position: static;
+    max-height: 320px;
+  }
+}

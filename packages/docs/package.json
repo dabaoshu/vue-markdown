@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:remark-think": "esno src/test/remark-think/cli.ts",
+    "test:remark-gfm": "esno src/test/remark-gfm/cli.ts",
+    "test:remark-math": "esno src/test/remark-math/cli.ts",
+    "test:code-highlight": "esno src/test/code-highlight/cli.ts",
+    "test:rehype-mermaid": "esno src/test/rehype-mermaid/cli.ts"
   },
   "dependencies": {
     "@codemirror/commands": "^6.8.1",
@@ -27,6 +32,8 @@
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.0",
     "remark-math": "^6.0.0",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
     "unist-util-visit-parents": "^6.0.1",
     "vue": "^3.4.29",
     "vue-codemirror": "^6.1.1",
@@ -35,6 +42,7 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.5",
     "@vitejs/plugin-vue-jsx": "^4.0.0",
+    "esno": "^4.7.0",
     "sass": "^1.81.1",
     "typescript": "^5.2.2",
     "vite": "^5.4.14",
