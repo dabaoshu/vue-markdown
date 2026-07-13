@@ -37,6 +37,56 @@ const createDtsPlugin = (options: Parameters<typeof dts>[0]) =>
   dts(options) as unknown as any;
 // https://vitejs.dev/config/
 const outDir = path.resolve(__dirname, './dist');
+/** 包根目录，用于将绝对路径转为 dist 内相对路径 */
+const PACKAGE_ROOT = path.normalize(`${__dirname}${path.sep}`);
+
+/**
+ * 将样式源文件路径转为 dist 内相对 CSS 路径
+ * @param filePath Rollup 记录的原始样式路径（绝对或相对）
+ */
+const toDistCssPath = (filePath: string): string | undefined => {
+  const normalized = path.normalize(filePath);
+  if (normalized.startsWith(PACKAGE_ROOT)) {
+    return path
+      .relative(PACKAGE_ROOT, normalized)
+      .replace(/\\/g, '/')
+      .replace(/\.(scss|sass)$/, '.css');
+  }
+  if (!path.isAbsolute(normalized)) {
+    return normalized.replace(/\\/g, '/').replace(/\.(scss|sass)$/, '.css');
+  }
+  return undefined;
+};
+
+/**
+ * 库构建时 CSS 资源输出路径：按源码相对路径落盘（`.scss`/`.sass` → `.css`）。
+ * 支持多模块各自产出样式，例如 `codeHighLight/ui/styles/codeLight.css`、`markdown/markdown.module.css`。
+ *
+ * @param assetInfo Rollup 预渲染资源信息
+ */
+const resolveLibCssAssetName: import('rollup').OutputOptions['assetFileNames'] = (
+  assetInfo
+) => {
+  const isStyleAsset =
+    assetInfo.names?.some((name) => /\.(css|scss|sass)$/.test(name)) ||
+    assetInfo.name?.endsWith('.css');
+
+  if (!isStyleAsset) {
+    return 'assets/[name][extname]';
+  }
+
+  for (const originalPath of assetInfo.originalFileNames ?? []) {
+    const distPath = toDistCssPath(originalPath);
+    if (distPath) {
+      return distPath;
+    }
+  }
+
+  /** 无法追溯源码（例如被合并成单文件）时，避免覆盖其它模块样式 */
+  const fallbackName = assetInfo.names?.[0] ?? assetInfo.name ?? 'style.css';
+  return `assets/${fallbackName}`;
+};
+
 export default defineConfig({
   plugins: [
     vue(),
@@ -56,6 +106,8 @@ export default defineConfig({
     emptyOutDir: true,
     target: 'es2020',
     outDir: 'es',
+    /** 按模块拆分 CSS，避免多份 scss 被合并后只能输出到一个文件 */
+    cssCodeSplit: true,
     //压缩
     // minify: 'esbuild',
     minify: false,
@@ -79,7 +131,8 @@ export default defineConfig({
           preserveModulesRoot: __dirname,
           exports: 'named',
           //配置打包根目录
-          dir: path.join(outDir, './es')
+          dir: path.join(outDir, './es'),
+          assetFileNames: resolveLibCssAssetName
         },
         {
           //打包格式
@@ -91,7 +144,8 @@ export default defineConfig({
           preserveModulesRoot: __dirname,
           exports: 'named',
           //配置打包根目录
-          dir: path.join(outDir, './lib')
+          dir: path.join(outDir, './lib'),
+          assetFileNames: resolveLibCssAssetName
         }
       ]
     },
@@ -102,7 +156,6 @@ export default defineConfig({
       },
       name: 'vue-markdown',
       fileName: 'vue-markdown'
-      // formats: ['es', 'cjs']
     }
   }
 });

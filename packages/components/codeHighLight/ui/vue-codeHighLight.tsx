@@ -1,6 +1,8 @@
 import { computed, defineComponent, PropType } from 'vue';
 import { getCodeClassName, highlightTohtml, refractorToHtml } from '../engine';
 import type { CodeHighlightGeneratorType } from '../core';
+/** 默认 highlight.js 主题（`.hljs-*`），随组件加载 */
+import './style';
 
 export const CodeHighLight = defineComponent({
   name: 'HighlighterVue',

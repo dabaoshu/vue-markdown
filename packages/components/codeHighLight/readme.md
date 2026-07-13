@@ -21,6 +21,41 @@
 pnpm add highlight.js refractor vue
 ```
 
+## 默认样式（内置）
+
+`CodeHighLight` 组件会**自动侧效加载**内置主题 `ui/styles/codeLight.scss`（VS Code Dark+ 风格，匹配 highlight.js 的 `.hljs-*` 类名）。
+
+使用组件时**无需**再手动 `import` 一份 scss/css：
+
+```vue
+<script setup lang="ts">
+import { CodeHighLight } from '@nnnb/markdown/vue-ui';
+// 默认主题已随 CodeHighLight 打包链路注入，无需 import './codeLight.scss'
+</script>
+```
+
+若仅使用引擎函数 `highlightTohtml`、不渲染 `CodeHighLight` 组件，可单独引入样式：
+
+```ts
+import '@nnnb/markdown/codeHighLight/ui/style';
+```
+
+构建产物中也可使用编译后的 CSS（`pnpm build` 后路径与源码目录一致）：
+
+```ts
+import '@nnnb/markdown/dist/es/codeHighLight/ui/styles/codeLight.css';
+// 其它模块示例：
+// import '@nnnb/markdown/dist/es/markdown/markdown.module.css';
+```
+
+多模块样式会分别输出到 `dist/es/<模块路径>/<文件名>.css`，不会全部堆在根目录 `style.css`。
+
+如需官方 highlight.js 主题，仍可覆盖为：
+
+```ts
+import 'highlight.js/styles/github.css';
+```
+
 ## UI 组件（highlight 模式）
 
 ```vue
@@ -30,14 +65,13 @@ pnpm add highlight.js refractor vue
 
 <script setup lang="ts">
 import { CodeHighLight } from '@nnnb/markdown/vue-ui';
-import 'highlight.js/styles/atom-one-dark.css';
 
 const language = 'typescript';
 const code = 'const msg = "hello";';
 </script>
 ```
 
-支持 `highlight.js` 的所有主题，可按需引入不同 CSS 文件。
+不再强制引入 `highlight.js/styles/*.css`；内置主题为 Dark+ 风格。
 
 ## UI 组件（refractor 模式）
 

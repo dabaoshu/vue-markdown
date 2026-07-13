@@ -57,5 +57,11 @@
     "dist/",
     "package.json",
     "README.md"
+  ],
+  "sideEffects": [
+    "**/*.scss",
+    "**/*.css",
+    "**/codeHighLight/ui/style.ts",
+    "**/vue-codeHighLight.tsx"
   ]
 }
