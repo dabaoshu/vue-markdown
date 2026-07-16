@@ -1,9 +1,34 @@
 {
   "name": "@nnnb/markdown",
-  "version": "1.0.1",
+  "version": "1.0.4",
   "scripts": {
     "build": "vite build",
     "build:style": "esno ./scripts/style"
+  },
+  "module": "./dist/es/index.mjs",
+  "main": "./dist/lib/index.js",
+  "types": "./dist/es/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/es/index.d.ts",
+      "import": "./dist/es/index.mjs",
+      "require": "./dist/lib/index.js",
+      "default": "./dist/lib/index.js"
+    },
+    "./vue-ui": {
+      "types": "./dist/es/vue-ui.d.ts",
+      "import": "./dist/es/vue-ui.mjs",
+      "require": "./dist/lib/vue-ui.js",
+      "default": "./dist/lib/vue-ui.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "vue-ui": [
+        "./dist/es/vue-ui.d.ts"
+      ]
+    }
   },
   "dependencies": {
     "beautiful-mermaid": "^1.1.3",
