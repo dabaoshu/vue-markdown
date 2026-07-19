@@ -1,6 +1,6 @@
 import { defineComponent } from 'vue';
 import { VueMarkdown } from '@nnnb/markdown/vue-ui';
-import { CodeBlock } from '@/components/markdown/codeBlock';
+import { CodeBlock } from '@nnnb/markdown-ui';
 
 /**
  * 测试页专用预览：按用例决定是否挂载 CodeBlock，关闭 math / 其它插件。

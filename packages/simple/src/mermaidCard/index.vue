@@ -21,7 +21,7 @@
 
 <script lang="ts" setup>
   import { ref } from 'vue';
-  import MermaidInteractiveBlock from '@/components/markdown/code_mermaid_card';
+  import { MermaidInteractiveBlock } from '@nnnb/markdown-ui';
 
   const title = ref('思维导图生成');
 
