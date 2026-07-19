@@ -3,25 +3,6 @@
   "version": "0.1.0",
   "type": "module",
   "private": true,
-  "scripts": {
-    "build": "vite build && vue-tsc --project tsconfig.build.json",
-    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
-    "test:contract": "esno test/package-contract.ts && esno test/workbench-contract.ts"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/es/src/index.d.ts",
-      "import": "./dist/es/index.mjs",
-      "require": "./dist/lib/index.js"
-    },
-    "./examples": {
-      "types": "./dist/es/src/examples/index.d.ts",
-      "import": "./dist/es/examples.mjs",
-      "require": "./dist/lib/examples.js"
-    }
-  },
-  "files": ["dist/", "package.json"],
-  "sideEffects": ["**/*.scss", "**/*.css"],
   "dependencies": {
     "@nnnb/markdown": "workspace:^",
     "@codemirror/commands": "^6.8.1",

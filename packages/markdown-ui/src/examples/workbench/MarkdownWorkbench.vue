@@ -82,7 +82,7 @@ import WorkbenchLoading from './WorkbenchLoading.vue';
 import WorkbenchMobileTabs from './WorkbenchMobileTabs.vue';
 import WorkbenchSidebar from './WorkbenchSidebar.vue';
 import { createStreamInputController } from './streamInputController';
-import type { MarkdownWorkbenchExpose, WorkbenchProps } from './types';
+import type { WorkbenchProps } from './types';
 import './style.scss';
 
 const source = defineModel<string>('source', { required: true });
@@ -151,7 +151,7 @@ onBeforeUnmount(() => {
   if (previewTimer) clearTimeout(previewTimer);
 });
 
-defineExpose<MarkdownWorkbenchExpose>({
+defineExpose({
   previewTarget,
   source: readonly(source),
   reset,

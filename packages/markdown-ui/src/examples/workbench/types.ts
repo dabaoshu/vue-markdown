@@ -1,4 +1,3 @@
-import type { Ref } from 'vue';
 import type { MarkdownFeatures } from '../../index';
 
 export interface WorkbenchTab {
@@ -20,8 +19,8 @@ export interface WorkbenchProps {
 }
 
 export interface MarkdownWorkbenchExpose {
-  previewTarget: Readonly<Ref<HTMLElement | null>>;
-  source: Readonly<Ref<string>>;
+  previewTarget: HTMLElement | null;
+  source: string;
   reset(): Promise<void>;
   stopStream(): void;
 }

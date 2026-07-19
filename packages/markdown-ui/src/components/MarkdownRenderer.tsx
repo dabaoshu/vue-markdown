@@ -1,13 +1,18 @@
 import { defineComponent, defineAsyncComponent, type PropType } from 'vue';
-import { CodeBlock } from '../codeBlock';
-import { tableNodeParse, rehypeMermaid, MergeThinkRemark } from '@nnnb/markdown';
+import { CodeBlock } from './code/codeBlock';
+import {
+  tableNodeParse,
+  rehypeMermaid,
+  MergeThinkRemark
+} from '@nnnb/markdown';
 import { VueMarkdown } from '@nnnb/markdown/vue-ui';
-import ThinkElement, { thinkGroupElementt } from './thinkElement';
+import ThinkElement, { thinkGroupElementt } from './think/thinkElement';
 import RemarkBreaks from 'remark-breaks';
 import RemarkGfm from 'remark-gfm';
 import 'katex/dist/katex.min.css';
 import { ElTable, ElTableColumn } from 'element-plus';
-import '../../../../components/markdown/markdown.module.scss';
+import '@nnnb/markdown/markdown/styles/markdown.scss';
+import './index.scss';
 
 export interface MarkdownFeatures {
   gfm: boolean;
@@ -38,7 +43,7 @@ export const DEFAULT_MARKDOWN_FEATURES: MarkdownFeatures = {
 
 /** Mermaid 卡片较重，按需异步加载 */
 const MermaidInteractiveBlock = defineAsyncComponent(
-  () => import('../code_mermaid_card')
+  () => import('./mermaid/code_mermaid_card')
 );
 
 const mathOptions = {
@@ -98,7 +103,18 @@ function buildMarkdownRenderOptions(features: MarkdownFeatures) {
     customElements.push('custom', 'other');
   }
 
-  const components: Record<string, unknown> = {};
+  const components: Record<string, unknown> = {
+    pre: (
+      pProps: Record<string, unknown>,
+      { slots }: { slots: { default?: () => unknown } }
+    ) => {
+      return (
+        <div {...pProps} class={'markdown-pre'}>
+          {slots.default && slots.default()}
+        </div>
+      );
+    }
+  };
 
   if (features.think) {
     components.think = ThinkElement;
@@ -119,7 +135,9 @@ function buildMarkdownRenderOptions(features: MarkdownFeatures) {
       </div>
     );
     components.other = (
-      pProps: Record<string, unknown> & { node?: { meta?: { loading?: boolean } } },
+      pProps: Record<string, unknown> & {
+        node?: { meta?: { loading?: boolean } };
+      },
       { slots }: { slots: { default?: () => unknown } }
     ) => (
       <div {...pProps} class={'markdown-other'}>
@@ -130,7 +148,9 @@ function buildMarkdownRenderOptions(features: MarkdownFeatures) {
   }
 
   if (features.elTable) {
-    components.table = (pProps: { node: Parameters<typeof tableNodeParse>[0] }) => {
+    components.table = (pProps: {
+      node: Parameters<typeof tableNodeParse>[0];
+    }) => {
       const { columns, data } = tableNodeParse(pProps.node, {
         type: 'object',
         uuid: true

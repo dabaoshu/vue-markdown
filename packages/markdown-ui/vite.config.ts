@@ -30,7 +30,7 @@ export default defineConfig({
     emptyOutDir: true,
     target: 'es2020',
     outDir,
-    cssCodeSplit: true,
+    cssCodeSplit: false,
     minify: false,
     copyPublicDir: false,
     reportCompressedSize: false,
@@ -39,28 +39,20 @@ export default defineConfig({
         index: path.resolve(__dirname, 'src/index.ts'),
         examples: path.resolve(__dirname, 'src/examples/index.ts')
       },
-      name: 'markdown-ui'
+      name: 'markdown-ui',
+      formats: ['es']
     },
     rollupOptions: {
       external: isExternal,
-      output: [
-        {
-          format: 'es',
-          dir: path.join(outDir, 'es'),
-          entryFileNames: '[name].mjs',
-          preserveModules: true,
-          preserveModulesRoot: __dirname,
-          exports: 'named'
-        },
-        {
-          format: 'cjs',
-          dir: path.join(outDir, 'lib'),
-          entryFileNames: '[name].js',
-          preserveModules: true,
-          preserveModulesRoot: __dirname,
-          exports: 'named'
-        }
-      ]
+      output: {
+        format: 'es',
+        dir: outDir,
+        entryFileNames: 'es/[name].mjs',
+        assetFileNames: 'style.css',
+        preserveModules: true,
+        preserveModulesRoot: __dirname,
+        exports: 'named'
+      }
     }
   }
 });

@@ -9,11 +9,6 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
-    "baseUrl": ".",
-    "paths": {
-      "@nnnb/markdown": ["../components/dist/es/index.d.ts"],
-      "@nnnb/markdown/vue-ui": ["../components/dist/es/vue-ui.d.ts"]
-    },
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
