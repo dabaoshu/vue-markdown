@@ -4,7 +4,12 @@ import { PropType, computed, defineComponent } from 'vue';
 import { unreachable } from 'devlop';
 import { processThink, preprocessMath } from './utils';
 import flow from 'lodash/flow';
-/**创建vue的markdown */
+/** 默认 markdown 主题样式，随 VueMarkdown 组件加载（与 CodeHighLight 的 style 侧效一致） */
+import './styles';
+
+/**
+ * Vue Markdown 渲染组件。
+ */
 
 type VueMarkdownProps2 = {
   /**自定义元素 remarkThink*/
