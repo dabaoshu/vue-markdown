@@ -43,7 +43,7 @@ import {
   type PdfExportOptions,
   type PdfPageBreakContext
 } from '@nnnb/markdown';
-import { MarkdownWorkbench, type MarkdownWorkbenchExpose } from '@nnnb/markdown-ui/examples';
+import { MarkdownWorkbench, type MarkdownWorkbenchExpose } from '@nnnb/markdown-ui';
 import {
   initialSimpleFeatures,
   loadSimpleWorkbenchTab,
@@ -55,7 +55,7 @@ const source = ref('');
 const activeTab = ref('diagrams');
 const features = ref({ ...initialSimpleFeatures });
 const exportTarget = computed(
-  () => workbenchRef.value?.previewTarget.value ?? null
+  () => workbenchRef.value?.previewTarget ?? null
 );
 
 const exportBusy = ref(false);
