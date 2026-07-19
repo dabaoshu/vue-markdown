@@ -1,6 +1,18 @@
 {
   "name": "@nnnb/markdown",
   "version": "1.0.1",
+  "exports": {
+    ".": {
+      "types": "./dist/es/index.d.ts",
+      "import": "./dist/es/index.mjs",
+      "require": "./dist/lib/index.js"
+    },
+    "./vue-ui": {
+      "types": "./dist/es/vue-ui.d.ts",
+      "import": "./dist/es/vue-ui.mjs",
+      "require": "./dist/lib/vue-ui.js"
+    }
+  },
   "scripts": {
     "build": "vite build",
     "build:style": "esno ./scripts/style"
