@@ -193,6 +193,9 @@ importers:
       '@nnnb/markdown':
         specifier: workspace:^
         version: link:../components
+      '@nnnb/markdown-ui':
+        specifier: workspace:^
+        version: link:../markdown-ui
       codemirror:
         specifier: ^6.0.1
         version: 6.0.2
@@ -284,12 +287,18 @@ importers:
       '@codemirror/view':
         specifier: ^6.36.8
         version: 6.43.6
+      '@element-plus/icons-vue':
+        specifier: ^2.3.1
+        version: 2.3.2(vue@3.5.40(typescript@5.9.2))
       '@nnnb/markdown':
         specifier: workspace:^
         version: link:../components
       element-plus:
         specifier: ^2.9.5
         version: 2.14.3(vue@3.5.40(typescript@5.9.2))
+      html2canvas:
+        specifier: ^1.4.1
+        version: 1.4.1
       mermaid:
         specifier: ^11.14.0
         version: 11.14.0
@@ -312,9 +321,6 @@ importers:
       vite:
         specifier: ^5.4.14
         version: 5.4.20(@types/node@20.19.43)(sass@1.97.3)
-      vite-plugin-dts:
-        specifier: 1.4.1
-        version: 1.4.1(@types/node@20.19.43)(vite@5.4.20(@types/node@20.19.43)(sass@1.97.3))
       vue:
         specifier: ^3.4.29
         version: 3.5.40(typescript@5.9.2)

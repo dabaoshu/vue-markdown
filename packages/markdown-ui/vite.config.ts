@@ -3,7 +3,6 @@ import path from 'node:path';
 import vue from '@vitejs/plugin-vue';
 import vueJsx from '@vitejs/plugin-vue-jsx';
 import { defineConfig } from 'vite';
-import dts from 'vite-plugin-dts';
 
 const packageJson = JSON.parse(
   readFileSync(path.resolve(__dirname, 'package.json'), 'utf8')
@@ -25,11 +24,7 @@ const outDir = path.resolve(__dirname, 'dist');
 export default defineConfig({
   plugins: [
     vue(),
-    vueJsx(),
-    dts({
-      outputDir: [path.join(outDir, 'es'), path.join(outDir, 'lib')],
-      tsconfigPath: path.resolve(__dirname, 'tsconfig.json')
-    })
+    vueJsx()
   ],
   build: {
     emptyOutDir: true,

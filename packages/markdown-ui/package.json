@@ -4,20 +4,20 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && vue-tsc --project tsconfig.build.json",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "test:contract": "esno test/package-contract.ts && esno test/workbench-contract.ts"
   },
   "exports": {
     ".": {
       "types": "./dist/es/src/index.d.ts",
-      "import": "./dist/es/src/index.mjs",
-      "require": "./dist/lib/src/index.js"
+      "import": "./dist/es/index.mjs",
+      "require": "./dist/lib/index.js"
     },
     "./examples": {
       "types": "./dist/es/src/examples/index.d.ts",
-      "import": "./dist/es/src/examples/index.mjs",
-      "require": "./dist/lib/src/examples/index.js"
+      "import": "./dist/es/examples.mjs",
+      "require": "./dist/lib/examples.js"
     }
   },
   "files": ["dist/", "package.json"],
@@ -28,7 +28,9 @@
     "@codemirror/lang-markdown": "^6.2.0",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.8",
+    "@element-plus/icons-vue": "^2.3.1",
     "element-plus": "^2.9.5",
+    "html2canvas": "^1.4.1",
     "mermaid": "^11.14.0",
     "vue-codemirror": "^6.1.1"
   },
@@ -41,7 +43,6 @@
     "esno": "^4.7.0",
     "sass": "^1.81.1",
     "vite": "^5.4.14",
-    "vite-plugin-dts": "1.4.1",
     "vue": "^3.4.29",
     "vue-tsc": "^2.0.21"
   }
