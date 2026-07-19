@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const root = resolve(import.meta.dirname, '..');
+const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
+
+assert.equal(pkg.name, '@nnnb/markdown-ui');
+assert.ok(pkg.exports['.'], 'stable root export is required');
+assert.ok(pkg.exports['./examples'], 'examples export is required');
+assert.deepEqual(Object.keys(pkg.exports).sort(), ['.', './examples']);
+assert.equal(pkg.dependencies['@nnnb/markdown'], 'workspace:^');
+
+console.log('markdown-ui package contract: ok');

@@ -1,0 +1,48 @@
+{
+  "name": "@nnnb/markdown-ui",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
+    "test:contract": "esno test/package-contract.ts && esno test/workbench-contract.ts"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/es/src/index.d.ts",
+      "import": "./dist/es/src/index.mjs",
+      "require": "./dist/lib/src/index.js"
+    },
+    "./examples": {
+      "types": "./dist/es/src/examples/index.d.ts",
+      "import": "./dist/es/src/examples/index.mjs",
+      "require": "./dist/lib/src/examples/index.js"
+    }
+  },
+  "files": ["dist/", "package.json"],
+  "sideEffects": ["**/*.scss", "**/*.css"],
+  "dependencies": {
+    "@nnnb/markdown": "workspace:^",
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-markdown": "^6.2.0",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.36.8",
+    "element-plus": "^2.9.5",
+    "mermaid": "^11.14.0",
+    "vue-codemirror": "^6.1.1"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.5",
+    "@vitejs/plugin-vue-jsx": "^4.0.0",
+    "esno": "^4.7.0",
+    "sass": "^1.81.1",
+    "vite": "^5.4.14",
+    "vite-plugin-dts": "1.4.1",
+    "vue": "^3.4.29",
+    "vue-tsc": "^2.0.21"
+  }
+}

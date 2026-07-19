@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "pnpm --filter @nnnb/simple dev",
     "dev:docs": "pnpm --filter @nnnb/docs dev",
-    "build:docs": "pnpm --filter @nnnb/docs build"
+    "build:docs": "pnpm --filter @nnnb/docs build",
+    "build:ui": "pnpm --filter @nnnb/markdown-ui build",
+    "test:ui": "pnpm --filter @nnnb/markdown-ui test:contract"
   },
   "dependencies": {
     "@vitejs/plugin-vue-jsx": "^4.0.0",
