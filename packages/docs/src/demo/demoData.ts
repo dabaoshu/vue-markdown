@@ -1,3 +1,5 @@
+import type { WorkbenchTab } from '@nnnb/markdown-ui/examples';
+
 /**
  * 演示 Tab 标识，与示例内容键一致
  */
@@ -370,6 +372,14 @@ export const demoTabList: DemoTabMeta[] = DEMO_TAB_ORDER.map((id) => ({
   id,
   label: DEMO_TAB_CONFIG[id].label,
   ...DEMO_TAB_EXTRA[id]
+}));
+
+/** 面向共享工作台的无业务投影。 */
+export const workbenchTabs: WorkbenchTab[] = demoTabList.map((tab) => ({
+  id: tab.id,
+  label: tab.label,
+  category: tab.category,
+  description: tab.description
 }));
 
 /**

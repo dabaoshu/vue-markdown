@@ -1,26 +1,10 @@
 import type { DemoTabId } from './demoData';
+import type { MarkdownFeatures } from '@nnnb/markdown-ui';
 
 /**
  * Demo 预览可开关的 Markdown 特性集合。
  */
-export interface DemoMarkdownFeatures {
-  /** remark-gfm */
-  gfm: boolean;
-  /** remark-breaks */
-  breaks: boolean;
-  /** remark-math + rehype-katex */
-  math: boolean;
-  /** rehypeMermaid */
-  mermaid: boolean;
-  /** remarkThink + MergeThinkRemark */
-  think: boolean;
-  /** custom / other 自定义标签 */
-  customTags: boolean;
-  /** CodeHighLight 代码块组件 */
-  codeHighlight: boolean;
-  /** tableNodeParse + ElTable */
-  elTable: boolean;
-}
+export type DemoMarkdownFeatures = MarkdownFeatures;
 
 /**
  * 特性开关 UI 元数据。
