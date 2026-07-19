@@ -1,8 +1,19 @@
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
-import { remarkThink } from '../../../../components/remark-think';
-import { MergeThinkRemark } from '../../../../components/componentsUtils/engine/mergeThinkRemark';
+import * as remarkThinkModule from '../../../../components/remark-think';
+import * as mergeThinkRemarkModule from '../../../../components/componentsUtils/engine/mergeThinkRemark';
 import type { RemarkThinkExpectation, RemarkThinkTestCase } from './types';
+
+const remarkThinkExports =
+  'remarkThink' in remarkThinkModule
+    ? remarkThinkModule
+    : (remarkThinkModule.default as typeof remarkThinkModule);
+const mergeThinkRemarkExports =
+  'MergeThinkRemark' in mergeThinkRemarkModule
+    ? mergeThinkRemarkModule
+    : (mergeThinkRemarkModule.default as typeof mergeThinkRemarkModule);
+const { remarkThink } = remarkThinkExports;
+const { MergeThinkRemark } = mergeThinkRemarkExports;
 
 /** mdast 宽松节点形态（仅测试断言需要的字段） */
 export interface TestMdastNode {
