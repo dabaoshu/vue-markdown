@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "pnpm --filter @nnnb/simple dev",
     "dev:docs": "pnpm --filter @nnnb/docs dev",
+    "dev:runner": "pnpm --filter @nnnb/dev-runner dev",
+    "build:runner": "pnpm --filter @nnnb/dev-runner build",
     "build:docs": "pnpm --filter @nnnb/docs build"
   },
   "dependencies": {
