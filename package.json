@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "pnpm --filter @nnnb/simple dev",
     "dev:docs": "pnpm --filter @nnnb/docs dev",
+    "dev:runner": "npm --prefix ./devRunner run dev",
+    "build:runner": "npm --prefix ./devRunner run build",
     "build:docs": "pnpm --filter @nnnb/docs build",
     "build:ui": "pnpm --filter @nnnb/markdown-ui build",
     "test:ui": "pnpm --filter @nnnb/markdown-ui test:contract"

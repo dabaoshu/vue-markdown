@@ -1,0 +1,25 @@
+{
+  "name": "@nnnb/dev-runner",
+  "description": "本地 Web 控制台：在仓库根或任意工程目录启停 npm scripts，并实时查看日志",
+  "author": "nnnb",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "dev-runner": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "tsx server/index.ts",
+    "start": "node dist/index.js",
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "esbuild": "^0.25.9",
+    "tsx": "^4.19.2",
+    "typescript": "^5.2.2"
+  }
+}

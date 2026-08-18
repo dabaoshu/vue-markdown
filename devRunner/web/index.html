@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>devRunner</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div>
+          <h1>devRunner</h1>
+          <p class="subtitle">
+            目标包
+            <code id="header-target-name">—</code>
+          </p>
+        </div>
+        <div class="header-meta">
+          <span id="ws-status" class="ws-status ws-offline" title="WebSocket 状态"
+            >WS 未连接</span
+          >
+        </div>
+      </header>
+
+      <nav class="app-tabs" role="tablist" aria-label="功能切换">
+        <button
+          type="button"
+          class="app-tab active"
+          role="tab"
+          aria-selected="true"
+          data-tab="scripts"
+          id="tab-scripts"
+        >
+          脚本控制
+        </button>
+        <button
+          type="button"
+          class="app-tab"
+          role="tab"
+          aria-selected="false"
+          data-tab="users"
+          id="tab-users"
+        >
+          用户跳转
+        </button>
+      </nav>
+
+      <main
+        id="panel-scripts"
+        class="tab-panel layout"
+        role="tabpanel"
+        aria-labelledby="tab-scripts"
+      >
+        <aside class="sidebar">
+          <div class="sidebar-title">目标包</div>
+          <div class="target-picker">
+            <select
+              id="target-package-select"
+              class="target-select"
+              title="仓库根、packages 或外部工程"
+            ></select>
+            <div id="target-package-meta" class="target-meta">—</div>
+            <div class="target-external">
+              <input
+                id="target-external-path"
+                type="text"
+                placeholder="外部工程路径，如 D:\项目\other-app"
+              />
+              <button type="button" id="btn-add-external" class="btn btn-primary">
+                添加
+              </button>
+              <button
+                type="button"
+                id="btn-remove-external"
+                class="btn btn-danger"
+                title="仅可移除外部工程"
+              >
+                移除
+              </button>
+            </div>
+          </div>
+          <div class="sidebar-title">Scripts</div>
+          <div id="script-list" class="script-list"></div>
+        </aside>
+
+        <section class="terminal-panel">
+          <div class="terminal-toolbar">
+            <div class="terminal-title">
+              日志
+              <span id="active-script" class="active-script">—</span>
+            </div>
+            <div class="terminal-actions">
+              <button type="button" id="btn-clear" class="btn btn-ghost" disabled>
+                清日志
+              </button>
+              <button type="button" id="btn-copy" class="btn btn-ghost" disabled>
+                复制
+              </button>
+            </div>
+          </div>
+          <pre id="terminal" class="terminal" aria-live="polite"></pre>
+        </section>
+      </main>
+
+      <section
+        id="panel-users"
+        class="tab-panel user-jump hidden"
+        role="tabpanel"
+        aria-labelledby="tab-users"
+        aria-label="用户信息跳转"
+        hidden
+      >
+        <div class="user-jump-head">
+          <div class="user-jump-title">用户信息跳转</div>
+          <div class="user-jump-head-actions">
+            <button type="button" id="btn-profile-add" class="btn btn-ghost">
+              新增行
+            </button>
+          </div>
+        </div>
+        <div class="user-jump-table-wrap">
+          <table class="user-jump-table" id="user-jump-table">
+            <thead>
+              <tr>
+                <th>角色</th>
+                <th>Host / IP</th>
+                <th>端口</th>
+                <th>accessToken</th>
+                <th>预览链接</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="user-jump-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
