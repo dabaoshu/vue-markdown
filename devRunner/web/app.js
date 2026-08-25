@@ -3,6 +3,9 @@ import { initUserJump } from './userJump.js';
 
 const TAB_STORAGE_KEY = 'devRunner.activeTab.v1';
 
+/** 与服务端 logBuffer.MAX_LOG_LINES 对齐 */
+const MAX_LOG_LINES = 2000;
+
 /**
  * 初始化顶层 Tab 切换：脚本控制 / 用户跳转
  */
@@ -244,6 +247,66 @@ function fillPackageSelect(packages, selected) {
 }
 
 /**
+ * 截断本地日志缓冲
+ * @param {LogChunk[]} list
+ */
+function trimLocalLogs(list) {
+  while (list.length > MAX_LOG_LINES) {
+    list.shift();
+  }
+  return list;
+}
+
+/**
+ * 按需从服务端拉取某脚本日志（WS 重连不再全量回放）
+ * @param {string} name
+ * @param {{ force?: boolean }} [opts]
+ */
+async function fetchScriptLogs(name, opts = {}) {
+  if (!name) {
+    return;
+  }
+  const existing = logsByScript.get(name);
+  if (!opts.force && existing && existing.length > 0) {
+    return;
+  }
+  try {
+    const res = await fetch(`/api/scripts/${encodeURIComponent(name)}/logs`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || `拉取日志失败 (${res.status})`);
+    }
+    /** @type {LogChunk[]} */
+    const logs = (data.logs || []).map((line) => ({
+      stream: line.stream,
+      text: line.text
+    }));
+    logsByScript.set(name, trimLocalLogs(logs));
+    if (name === activeName) {
+      renderTerminal();
+    }
+  } catch (err) {
+    console.error('[devRunner] 拉取日志失败', err);
+  }
+}
+
+/**
+ * 选中脚本并按需加载日志
+ * @param {string} name
+ */
+async function selectScript(name) {
+  activeName = name;
+  stickToBottom = true;
+  renderScriptList();
+  renderTerminal();
+  updateToolbar();
+  await fetchScriptLogs(name);
+  if (name === activeName) {
+    renderTerminal();
+  }
+}
+
+/**
  * 用服务端返回的 scripts 重置本地状态
  * @param {ScriptRuntime[]} list
  * @param {boolean} [clearLogs]
@@ -289,6 +352,9 @@ async function loadScripts() {
   renderScriptList();
   renderTerminal();
   updateToolbar();
+  if (activeName) {
+    await fetchScriptLogs(activeName, { force: true });
+  }
 }
 
 /**
@@ -516,11 +582,7 @@ function renderScriptList() {
         void handleCardAction(script.name, btn.getAttribute('data-action'));
         return;
       }
-      activeName = script.name;
-      stickToBottom = true;
-      renderScriptList();
-      renderTerminal();
-      updateToolbar();
+      void selectScript(script.name);
     });
 
     elList.appendChild(card);
@@ -830,11 +892,14 @@ function upsertScript(patch) {
 function handleEvent(event) {
   switch (event.type) {
     case 'snapshot': {
-      // 重连时先清空本地日志，避免与服务端回放重复
+      // 重连时先清空本地日志，再按需拉取当前脚本
       if (event.target) {
         applyTarget(event.target);
       }
       replaceScripts(event.scripts || [], true);
+      if (activeName) {
+        void fetchScriptLogs(activeName, { force: true });
+      }
       break;
     }
     case 'target': {
@@ -842,12 +907,13 @@ function handleEvent(event) {
         applyTarget(event.target);
       }
       replaceScripts(event.scripts || [], true);
+      if (activeName) {
+        void fetchScriptLogs(activeName, { force: true });
+      }
       break;
     }
     case 'log': {
-      // snapshot 回放时服务端会清空前可能重复；这里直接追加
       const list = logsByScript.get(event.script) || [];
-      // clear-logs 后服务端会发 system「日志已清空」——若上一句是清空标记则重置缓冲
       if (
         event.stream === 'system' &&
         typeof event.text === 'string' &&
@@ -856,6 +922,7 @@ function handleEvent(event) {
         logsByScript.set(event.script, [{ stream: 'system', text: event.text }]);
       } else {
         list.push({ stream: event.stream, text: event.text });
+        trimLocalLogs(list);
         logsByScript.set(event.script, list);
       }
       if (event.script === activeName) {

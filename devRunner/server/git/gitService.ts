@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { getRepoRoot } from './paths.js';
+import { getRepoRoot } from '../config/paths.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -128,4 +128,4 @@ export async function checkoutBranch(target: string): Promise<GitInfo> {
   return getGitInfo();
 }
 
-export { getRepoRoot } from './paths.js';
+export { getRepoRoot } from '../config/paths.js';

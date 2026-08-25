@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { getStateDir } from './paths.js';
+import { getStateDir } from '../config/paths.js';
 
 /**
  * 用户跳转角色配置
@@ -43,6 +43,19 @@ export function getUserJumpFile(): string {
 }
 
 /**
+ * 判断路径是否存在
+ * @param filePath 路径
+ */
+async function pathExists(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * 规范化一条配置
  * @param raw 原始对象
  */
@@ -65,18 +78,20 @@ function normalizeProfile(raw: unknown): UserJumpProfile | null {
 /**
  * 读取用户跳转列表
  */
-export function loadUserJump(): UserJumpProfile[] {
+export async function loadUserJump(): Promise<UserJumpProfile[]> {
   const filePath = getUserJumpFile();
-  if (!existsSync(filePath)) {
+  if (!(await pathExists(filePath))) {
     const initial = defaultProfiles();
-    saveUserJump(initial);
+    await saveUserJump(initial);
     return initial;
   }
   try {
-    const parsed = JSON.parse(readFileSync(filePath, 'utf8')) as unknown;
+    const parsed = JSON.parse(await readFile(filePath, 'utf8')) as unknown;
     const list = Array.isArray(parsed)
       ? parsed
-      : parsed && typeof parsed === 'object' && Array.isArray((parsed as { profiles?: unknown }).profiles)
+      : parsed &&
+          typeof parsed === 'object' &&
+          Array.isArray((parsed as { profiles?: unknown }).profiles)
         ? (parsed as { profiles: unknown[] }).profiles
         : [];
     const profiles = list
@@ -94,7 +109,9 @@ export function loadUserJump(): UserJumpProfile[] {
  * 写入用户跳转列表
  * @param profiles 角色列表
  */
-export function saveUserJump(profiles: UserJumpProfile[]): UserJumpProfile[] {
+export async function saveUserJump(
+  profiles: UserJumpProfile[]
+): Promise<UserJumpProfile[]> {
   const normalized = profiles
     .map((item) => normalizeProfile(item))
     .filter((item): item is UserJumpProfile => Boolean(item));
@@ -104,13 +121,13 @@ export function saveUserJump(profiles: UserJumpProfile[]): UserJumpProfile[] {
     throw err;
   }
   const dir = getStateDir();
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
+  if (!(await pathExists(dir))) {
+    await mkdir(dir, { recursive: true });
   }
   const payload = {
     profiles: normalized,
     updatedAt: new Date().toISOString()
   };
-  writeFileSync(getUserJumpFile(), JSON.stringify(payload, null, 2), 'utf8');
+  await writeFile(getUserJumpFile(), JSON.stringify(payload, null, 2), 'utf8');
   return normalized;
 }

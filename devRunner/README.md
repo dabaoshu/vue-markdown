@@ -10,12 +10,42 @@
 
 - 启动 / 停止 / 重启目标工程 scripts
 - 目标可切换：本仓库根、`packages/*`（若存在），或添加任意本机工程目录（需含 package.json）
-- WebSocket 实时日志（类终端，保留 ANSI 着色）
+- WebSocket 实时日志（类终端，保留 ANSI 着色）；重连只同步快照，日志按需拉取
 - 从 Vite 输出自动解析端口，一键打开预览链接
 - 清日志、复制日志
 - 服务退出时自动清理子进程
 - Header 显示当前 Git 分支 / commit，可切换本地或远程分支
 - 「用户跳转」表格：多角色 accessToken + host/port，数据保存在 `user-jump.json`
+
+## 目录结构
+
+```
+devRunner/
+  server/
+    index.ts          # HTTP / WS 入口
+    types.ts
+    config/           # 配置加载、路径解析
+    runner/           # 启停脚本、包管理器检测
+    target/           # 目标工程扫描与解析
+    log/              # 日志缓冲、端口解析
+    http/             # 监听地址、WebSocket、静态资源
+    git/              # 分支信息
+    store/            # 用户跳转等状态
+  web/                # 控制台前端
+  test/               # 与 server 同级的领域单测
+  build.mjs
+```
+
+## 开发
+
+```bash
+cd devRunner
+npm install
+npm run dev        # 启动控制台
+npm test           # 核心逻辑单测
+npm run typecheck
+npm run build
+```
 
 ## 使用
 
@@ -100,10 +130,12 @@ node dist/index.js
 | `DEV_RUNNER_PACKAGES` | packages 目录绝对路径（可选） | `$DEV_RUNNER_ROOT/packages` |
 | `DEV_RUNNER_STATE` | `.target-package` 等状态文件目录 | 包目录 / `index.js` 旁 |
 | `DEV_RUNNER_PORT` | 控制台端口 | `8787` |
+| `DEV_RUNNER_PM` | 启停脚本用的包管理器：`auto` / `npm` / `pnpm` / `yarn` | `auto`（看 `packageManager` 字段与 lockfile） |
 
 ## 说明
 
-- 默认在仓库根执行 `npm run <script>`；也可切到 `packages/*` 或添加本机其它工程绝对路径
+- 按目标目录自动选择包管理器（`packageManager` 字段 / lockfile，可用 `DEV_RUNNER_PM` 强制）
+- 默认在仓库根执行 scripts；也可切到 `packages/*` 或添加本机其它工程绝对路径
 - 外部工程列表会记住；也可用环境变量指定启动路径：
 
 ```bash

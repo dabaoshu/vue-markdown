@@ -22,6 +22,8 @@ export interface RunnerConfig {
   packages?: string;
   /** 状态文件目录 */
   state?: string;
+  /** 包管理器：auto | npm | pnpm | yarn */
+  pm?: string;
 }
 
 const ENV_KEYS = [
@@ -31,6 +33,7 @@ const ENV_KEYS = [
   'DEV_RUNNER_WEB',
   'DEV_RUNNER_PACKAGES',
   'DEV_RUNNER_STATE',
+  'DEV_RUNNER_PM',
   'DEV_RUNNER_CONFIG'
 ] as const;
 
@@ -46,18 +49,36 @@ const JS_TO_ENV: Record<string, (typeof ENV_KEYS)[number]> = {
   packages: 'DEV_RUNNER_PACKAGES',
   PACKAGES: 'DEV_RUNNER_PACKAGES',
   state: 'DEV_RUNNER_STATE',
-  STATE: 'DEV_RUNNER_STATE'
+  STATE: 'DEV_RUNNER_STATE',
+  pm: 'DEV_RUNNER_PM',
+  PM: 'DEV_RUNNER_PM',
+  packageManager: 'DEV_RUNNER_PM',
+  PACKAGE_MANAGER: 'DEV_RUNNER_PM'
 };
 
 /**
- * 包根：server/ 或 dist/ 的上一级；独立拷贝的 index.js 则为其所在目录
+ * 查找配置时扫描的目录：cwd、本模块旁、包根、dist 旁
  */
 function getSearchRoots(): string[] {
   const cwd = process.cwd();
-  const base = path.basename(HERE);
-  const pkgRoot =
-    base === 'server' || base === 'dist' ? path.resolve(HERE, '..') : HERE;
-  const dirs = [cwd, HERE, pkgRoot];
+  let pkgRoot = HERE;
+  let walk = HERE;
+  for (let i = 0; i < 8; i++) {
+    if (existsSync(path.join(walk, 'package.json'))) {
+      pkgRoot = walk;
+      break;
+    }
+    if (path.basename(walk) === 'dist') {
+      pkgRoot = walk;
+      break;
+    }
+    const parent = path.dirname(walk);
+    if (parent === walk) {
+      break;
+    }
+    walk = parent;
+  }
+  const dirs = [cwd, HERE, pkgRoot, path.resolve(HERE, '..')];
   return [...new Set(dirs.map((d) => path.resolve(d)))];
 }
 

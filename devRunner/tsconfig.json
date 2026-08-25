@@ -12,5 +12,5 @@
     "noEmit": true,
     "rootDir": "."
   },
-  "include": ["server/**/*.ts"]
+  "include": ["server/**/*.ts", "test/**/*.ts"]
 }

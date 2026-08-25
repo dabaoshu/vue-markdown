@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfigSync } from './config.js';
@@ -6,7 +6,7 @@ import { loadConfigSync } from './config.js';
 loadConfigSync();
 
 /**
- * 当前模块所在目录（tsx 下为 server/，打包后为 dist/）
+ * 当前模块所在目录（可能在 server/config/ 子目录，或打包后的 dist/）
  */
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -35,20 +35,53 @@ function looksLikeWorkspace(dir: string): boolean {
 }
 
 /**
- * 包根目录：tsx 的 server/ 上一级；打包后优先用 index.js 所在目录（含 web/）
+ * 包根目录：含 package.json(@nnnb/dev-runner) 的目录；打包后为 dist/
  */
 export function getPkgRoot(): string {
-  const base = path.basename(HERE);
-  if (base === 'server') {
-    return path.resolve(HERE, '..');
-  }
-  if (base === 'dist') {
-    if (existsSync(path.join(HERE, 'index.js')) || existsSync(path.join(HERE, 'web'))) {
-      return HERE;
+  let dir = HERE;
+  for (let i = 0; i < 8; i++) {
+    if (path.basename(dir) === 'dist') {
+      if (
+        existsSync(path.join(dir, 'index.js')) ||
+        existsSync(path.join(dir, 'web'))
+      ) {
+        return dir;
+      }
     }
-    return path.resolve(HERE, '..');
+
+    const pkgJson = path.join(dir, 'package.json');
+    if (existsSync(pkgJson)) {
+      try {
+        const pkg = JSON.parse(readFileSync(pkgJson, 'utf8')) as {
+          name?: string;
+        };
+        if (pkg.name === '@nnnb/dev-runner') {
+          return dir;
+        }
+      } catch {
+        // continue
+      }
+    }
+
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
   }
-  return HERE;
+
+  // 回退：假设位于 server/** 下
+  if (HERE.replace(/\\/g, '/').includes('/server/')) {
+    let walk = HERE;
+    while (path.basename(walk) !== 'server' && path.dirname(walk) !== walk) {
+      walk = path.dirname(walk);
+    }
+    if (path.basename(walk) === 'server') {
+      return path.resolve(walk, '..');
+    }
+  }
+
+  return path.resolve(HERE, '..');
 }
 
 /**
@@ -105,11 +138,17 @@ export function getWebDir(): string {
   if (fromEnv) {
     return fromEnv;
   }
+  const pkgRoot = getPkgRoot();
+  const besidePkg = path.join(pkgRoot, 'web');
+  if (existsSync(besidePkg)) {
+    return besidePkg;
+  }
+  // 打包后 index.js 与 web/ 同级（pkgRoot 即为 dist）
   const besideExe = path.join(HERE, 'web');
   if (existsSync(besideExe)) {
     return besideExe;
   }
-  return path.join(getPkgRoot(), 'web');
+  return besidePkg;
 }
 
 /**
@@ -117,6 +156,8 @@ export function getWebDir(): string {
  */
 export function logResolvedPaths(): void {
   console.log(`[dev-runner] ROOT   = ${getRepoRoot()}`);
-  console.log(`[dev-runner] WEB    = ${process.env.DEV_RUNNER_WEB?.trim() || '(embedded or ' + getWebDir() + ')'}`);
+  console.log(
+    `[dev-runner] WEB    = ${process.env.DEV_RUNNER_WEB?.trim() || '(embedded or ' + getWebDir() + ')'}`
+  );
   console.log(`[dev-runner] STATE  = ${getStateDir()}`);
 }
