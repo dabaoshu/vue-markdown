@@ -30,3 +30,4 @@ packages/components/remark-plantuml/index.ts
 packages/components/remark-plantuml/readme.md
 packages/components/remark-plantuml/core/types.ts
 packages/components/remark-plantuml/engine/rehypePlantuml.ts
+graphify-out/
