@@ -8,7 +8,7 @@ const stylePath = resolve(root, 'dist/style.css');
 assert.ok(existsSync(stylePath), 'the public stylesheet must be emitted');
 const style = readFileSync(stylePath, 'utf8');
 for (const selector of [
-  '.markdown-workbench',
+  '.demo-workbench',
   '.cm-editor',
   '.markdown-think',
   '.markdown'

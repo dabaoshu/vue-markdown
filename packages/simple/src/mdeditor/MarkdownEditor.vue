@@ -8,9 +8,9 @@
     :load-tab-content="loadSimpleWorkbenchTab"
   >
     <template #toolbar-end>
-      <button :disabled="!exportTarget || exportBusy" @click="handlePreviewPdf">预览 PDF</button>
-      <button :disabled="!exportTarget || exportBusy" @click="handleExportPdf">导出 PDF</button>
-      <button :disabled="!exportTarget || exportBusy" @click="handleExportPng">导出 PNG</button>
+      <button class="tool-btn" :disabled="!exportTarget || exportBusy" @click="handlePreviewPdf">预览 PDF</button>
+      <button class="tool-btn" :disabled="!exportTarget || exportBusy" @click="handleExportPdf">导出 PDF</button>
+      <button class="tool-btn" :disabled="!exportTarget || exportBusy" @click="handleExportPng">导出 PNG</button>
     </template>
   </MarkdownWorkbench>
 

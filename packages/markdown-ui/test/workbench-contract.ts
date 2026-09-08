@@ -7,6 +7,10 @@ const types = readFileSync(
   resolve(root, 'src/examples/workbench/types.ts'),
   'utf8'
 );
+const panel = readFileSync(
+  resolve(root, 'src/examples/workbench/WorkbenchFeaturePanel.vue'),
+  'utf8'
+);
 const component = readFileSync(
   resolve(root, 'src/examples/workbench/MarkdownWorkbench.vue'),
   'utf8'
@@ -31,6 +35,10 @@ for (const slot of ['toolbar-start', 'toolbar-end', 'preview-actions']) {
 }
 assert.match(component, /defineExpose/);
 assert.match(component, /previewTarget/);
+assert.match(component, /class="demo-workbench"/);
+assert.match(component, /v-show="!sampleOpen"/);
+assert.match(panel, /示例代码/);
+assert.match(panel, /buildVueMarkdownSnippet/);
 assert.doesNotMatch(component, /@\/|packages\/docs|packages\/simple/);
 
 console.log('markdown workbench contract: ok');
