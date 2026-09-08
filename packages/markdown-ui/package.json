@@ -11,7 +11,6 @@
     "@codemirror/view": "^6.36.8",
     "@element-plus/icons-vue": "^2.3.1",
     "element-plus": "^2.9.5",
-    "html2canvas": "^1.4.1",
     "katex": "^0.16.11",
     "mermaid": "^11.14.0",
     "remark-breaks": "^4.0.0",

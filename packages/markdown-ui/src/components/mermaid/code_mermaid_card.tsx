@@ -5,8 +5,8 @@ import {
   ZoomIn,
   ZoomOut
 } from '@element-plus/icons-vue';
+import { copySvgAsPng, downloadSvgAsPng } from '@nnnb/markdown';
 import { ElButton, ElMessage, ElTooltip } from 'element-plus';
-import html2canvas from 'html2canvas';
 import {
   defineComponent,
   nextTick,
@@ -168,6 +168,7 @@ export const MermaidInteractiveBlock = defineComponent({
     const draftCode = ref(props.code || '');
     const previewPaneRef = ref<MermaidPreviewPaneExpose | null>(null);
     const previewCopied = ref(false);
+    const isExporting = ref(false);
 
     let previewCopyTimer = 0;
 
@@ -203,7 +204,7 @@ export const MermaidInteractiveBlock = defineComponent({
     }
 
     /**
-     * 等待浏览器完成一次绘制，减少截图时机导致的白图
+     * 等待浏览器完成一次绘制，让「导出中」状态先上屏
      * @returns {Promise<void>}
      */
     async function waitForPaint(): Promise<void> {
@@ -214,82 +215,63 @@ export const MermaidInteractiveBlock = defineComponent({
     }
 
     /**
-     * 将画布转换为 PNG Blob
-     * @param canvas 画布
-     * @returns {Promise<Blob>}
+     * 读取预览区已渲染的 Mermaid SVG
+     * @returns {SVGSVGElement | null}
      */
-    async function toPngBlob(canvas: HTMLCanvasElement): Promise<Blob> {
-      return await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            reject(new Error('PNG 生成失败'));
-            return;
-          }
-          resolve(blob);
-        }, 'image/png');
-      });
+    function resolvePreviewSvg(): SVGSVGElement | null {
+      return previewPaneRef.value?.getSvgElement() ?? null;
     }
 
     /**
      * 下载预览图 PNG
+     * @description 直接光栅化 Mermaid SVG，避免 html2canvas 克隆整棵 DOM 导致主线程卡顿
      * @returns {Promise<void>}
      */
     async function downloadPreviewImage(): Promise<void> {
-      const root = previewPaneRef.value?.getRootElement();
-      if (!root) {
+      if (isExporting.value) return;
+      const svg = resolvePreviewSvg();
+      if (!svg) {
         ElMessage.warning('当前没有可下载的图像');
         return;
       }
+      isExporting.value = true;
       try {
         await waitForPaint();
-        const canvas = await html2canvas(root, {
+        await downloadSvgAsPng(svg, 'mermaid-diagram.png', {
           backgroundColor: '#ffffff',
-          scale: Math.max(window.devicePixelRatio || 1, 2),
-          useCORS: true,
-          allowTaint: false,
-          logging: false
+          pixelRatio: 2,
+          stripForeignObject: true
         });
-        const pngBlob = await toPngBlob(canvas);
-        const pngUrl = URL.createObjectURL(pngBlob);
-        const link = document.createElement('a');
-        link.href = pngUrl;
-        link.download = 'mermaid-diagram.png';
-        link.click();
-        URL.revokeObjectURL(pngUrl);
       } catch {
         ElMessage.error('PNG 下载失败');
+      } finally {
+        isExporting.value = false;
       }
     }
 
     /**
      * 复制预览图到剪贴板
+     * @description 与下载共用 SVG 光栅化路径，避免主线程被 html2canvas 阻塞
      * @returns {Promise<void>}
      */
     async function copyPreviewImage(): Promise<void> {
-      const root = previewPaneRef.value?.getRootElement();
-      if (!root) {
+      if (isExporting.value) return;
+      const svg = resolvePreviewSvg();
+      if (!svg) {
         ElMessage.warning('当前没有可复制的图像');
         return;
       }
+      if (!navigator.clipboard || !window.ClipboardItem) {
+        ElMessage.warning('当前环境不支持图片复制');
+        return;
+      }
+      isExporting.value = true;
       try {
         await waitForPaint();
-        const canvas = await html2canvas(root, {
+        await copySvgAsPng(svg, {
           backgroundColor: '#ffffff',
-          scale: Math.max(window.devicePixelRatio || 1, 2),
-          useCORS: true,
-          allowTaint: false,
-          logging: false
+          pixelRatio: 2
         });
-        const pngBlob = await toPngBlob(canvas);
-        if (!navigator.clipboard || !window.ClipboardItem) {
-          ElMessage.warning('当前环境不支持图片复制');
-          return;
-        }
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            'image/png': pngBlob
-          })
-        ]);
         previewCopied.value = true;
         window.clearTimeout(previewCopyTimer);
         previewCopyTimer = window.setTimeout(() => {
@@ -297,6 +279,8 @@ export const MermaidInteractiveBlock = defineComponent({
         }, COPY_RESET_MS);
       } catch {
         ElMessage.error('复制图片失败');
+      } finally {
+        isExporting.value = false;
       }
     }
 
@@ -666,32 +650,41 @@ export const MermaidInteractiveBlock = defineComponent({
                     key: 'zoom-in',
                     label: '放大',
                     icon: ZoomIn,
+                    disabled: false,
                     onClick: () => previewPaneRef.value?.zoomIn()
                   },
                   {
                     key: 'zoom-out',
                     label: '缩小',
                     icon: ZoomOut,
+                    disabled: false,
                     onClick: () => previewPaneRef.value?.zoomOut()
                   },
                   {
                     key: 'zoom-reset',
                     label: '自适应',
                     icon: RefreshRight,
+                    disabled: false,
                     onClick: () => previewPaneRef.value?.resetView()
                   },
                   {
                     key: 'download',
-                    label: '下载',
+                    label: isExporting.value ? '导出中' : '下载',
                     icon: Download,
+                    disabled: isExporting.value,
                     onClick: () => {
                       void downloadPreviewImage();
                     }
                   },
                   {
                     key: 'copy-preview',
-                    label: previewCopied.value ? '已复制' : '复制',
+                    label: previewCopied.value
+                      ? '已复制'
+                      : isExporting.value
+                        ? '导出中'
+                        : '复制',
                     icon: CopyDocument,
+                    disabled: isExporting.value,
                     onClick: () => {
                       void copyPreviewImage();
                     }
@@ -707,6 +700,7 @@ export const MermaidInteractiveBlock = defineComponent({
                       <ElButton
                         text
                         size='small'
+                        disabled={action.disabled}
                         onClick={action.onClick}
                         style={{
                           margin: 0,

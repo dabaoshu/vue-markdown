@@ -296,9 +296,6 @@ importers:
       element-plus:
         specifier: ^2.9.5
         version: 2.14.3(vue@3.5.40(typescript@5.9.2))
-      html2canvas:
-        specifier: ^1.4.1
-        version: 1.4.1
       katex:
         specifier: ^0.16.11
         version: 0.16.47
@@ -354,9 +351,6 @@ importers:
       '@element-plus/icons-vue':
         specifier: ^2.3.1
         version: 2.3.2(vue@3.5.40(typescript@5.9.2))
-      '@nnnb/directives':
-        specifier: workspace:^
-        version: link:../directives
       '@nnnb/markdown':
         specifier: workspace:^
         version: link:../components

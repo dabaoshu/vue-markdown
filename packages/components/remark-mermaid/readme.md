@@ -132,6 +132,50 @@ const components = {
 - `onRender`：渲染成功回调
 - `onError`：渲染失败回调
 
+## SVG 导出（PNG 下载 / 复制）
+
+卡片预览（`MermaidInteractiveBlock`）的「下载」「复制」**不使用 html2canvas 截整页 DOM**，而是光栅化已渲染的 Mermaid SVG，避免主线程卡顿。
+
+从 `@nnnb/markdown` 引入：
+
+```ts
+import {
+  rasterizeSvgToCanvas,
+  downloadSvgAsPng,
+  copySvgAsPng,
+  downloadSvgFallback
+} from '@nnnb/markdown';
+
+const svg = document.querySelector('.mermaid-block svg');
+if (svg instanceof SVGSVGElement) {
+  await downloadSvgAsPng(svg, 'mermaid-diagram.png', {
+    pixelRatio: 2,
+    backgroundColor: '#ffffff',
+    stripForeignObject: true
+  });
+}
+```
+
+| API | 说明 |
+| --- | --- |
+| `rasterizeSvgToCanvas(svg, options?)` | 将 SVG 画到 Canvas；默认像素比 `2`，最长边不超过 `4096` |
+| `downloadSvgAsPng(svg, filename, options?)` | 下载 PNG |
+| `copySvgAsPng(svg, options?)` | 复制 PNG 到剪贴板（默认剥离 `foreignObject`） |
+| `downloadSvgFallback(svg, filename?)` | 直接下载原始 SVG |
+
+`MermaidRasterizeOptions`：
+
+- `stripForeignObject`：思维导图等 HTML 标签节点无法作为 `<img>` 绘制时，把文字回退为 SVG `text`
+- `pixelRatio`：导出像素比，默认 `2`
+- `backgroundColor`：背景色，默认 `#ffffff`
+- `fontFamily`：导出字体栈
+
+交互层注意：
+
+- 导出尺寸以 SVG `viewBox` 为准，不受当前缩放影响
+- 导出期间按钮会进入「导出中」，避免连点
+- ASCII 输出（无 SVG）时没有可下载图像
+
 ## 代码块 meta 覆盖示例
 
 ### 1. 切换到 beautiful SVG 渲染
@@ -238,3 +282,16 @@ graph TD
 ### 用例 7：cacheKey 稳定性
 
 输入同一份代码与同一配置，预期生成相同 `cacheKey`；任一项变更（包括 `engine`、`beautifulOptions`）时，`cacheKey` 应变化。
+
+### 用例 8：卡片 PNG 下载 / 复制
+
+```md
+\`\`\`mermaid
+mindmap
+  root((导出))
+    下载 PNG
+    复制图片
+\`\`\`
+```
+
+预期：预览工具栏「下载」「复制」走 `downloadSvgAsPng` / `copySvgAsPng`；点击后按钮短暂「导出中」，页面不应因 html2canvas 卡顿。

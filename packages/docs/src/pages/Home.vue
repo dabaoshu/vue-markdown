@@ -82,11 +82,11 @@ remarkPlugins={[RemarkBreaks, RemarkGfm]}`
     demoTab: 'mermaid',
     title: 'Mermaid 图表',
     description:
-      'rehypeMermaid 插件识别 mermaid 代码块，支持官方 mermaid 与 beautiful-mermaid 双引擎及 meta 覆盖。',
-    tags: ['rehypeMermaid', 'MermaidBlock'],
-    snippet: `import { rehypeMermaid } from '@nnnb/markdown';
+      'rehypeMermaid 识别 mermaid 代码块，支持双引擎与 meta 覆盖；卡片预览可缩放，下载/复制 PNG 走 SVG 光栅化（非 html2canvas）。',
+    tags: ['rehypeMermaid', 'MermaidInteractiveBlock', 'downloadSvgAsPng'],
+    snippet: `import { downloadSvgAsPng } from '@nnnb/markdown';
 
-rehypePlugins={[[rehypeMermaid, { engine: 'mermaid' }]]}`
+await downloadSvgAsPng(svg, 'mermaid-diagram.png');`
   },
   {
     id: 'think',

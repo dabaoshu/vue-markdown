@@ -130,6 +130,7 @@ const md = '```mermaid\nflowchart LR\n  A --> B\n```';
 - 加载/错误遮罩：`showLoading`、`loadingText`、`errorText`、`loadingDelayMs`、`minLoadingMs`
 - 代码块 meta 覆盖：` ```mermaid engine=beautiful output=ascii `（受 `enableMetaOptions` 控制，默认开启）
 - 空代码回退：`fallbackMode: 'keep-code' | 'placeholder'`（默认 `keep-code`）
+- PNG 导出：`downloadSvgAsPng` / `copySvgAsPng` 光栅化已渲染 SVG（卡片「下载」「复制」走此路径，**不用 html2canvas 截整页**）
 
 `MermaidBlock` 也可独立使用：
 
@@ -213,7 +214,7 @@ const md = '<think>\n正在思考...\n</think>';
 | `markdown` | `CreateVMarkdown`, `MarkdownOptions`, `defaultUrlTransform`, `preprocessLaTeX`, `preprocessMath`, `processThink` | 核心 markdown→JSX 渲染、数学公式与 think 预处理 |
 | `remark-think` | `remarkThink`, `thinkSyntax`, `ThinkFlowOption` | 自定义块级标签解析 |
 | `codeHighLight` | `highlightTohtml`, `refractorToHtml`, `getCodeClassName` | 代码高亮纯函数 |
-| `remark-mermaid` | `rehypeMermaid`, `jsonToMermaid`, `extractExternalResourceRefs`, `rasterizeSvgToCanvas`, `downloadSvgAsPng`, `copySvgAsPng` | Mermaid rehype 插件、JSON→DSL、SVG 导出工具 |
+| `remark-mermaid` | `rehypeMermaid`, `jsonToMermaid`, `extractExternalResourceRefs`, `rasterizeSvgToCanvas`, `downloadSvgAsPng`, `copySvgAsPng` | Mermaid rehype 插件、JSON→DSL、SVG→PNG 导出（非 html2canvas） |
 | `componentsUtils` | `tableNodeParse`, `replaceCodeFenceToComponent`, `createRenderTimingController`, `mergeThinkRemark`, `mergeThinkRehype` | 表格解析、代码块替换为组件、渲染时序控制、think 合并 |
 
 ## 分层说明

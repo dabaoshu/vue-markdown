@@ -16,6 +16,8 @@ export type MermaidPreviewPaneExpose = {
   fitToViewport: () => Promise<void>;
   /** 获取截图用根节点 */
   getRootElement: () => HTMLElement | null;
+  /** 获取已渲染的 Mermaid SVG，供 PNG 导出使用 */
+  getSvgElement: () => SVGSVGElement | null;
 };
 
 /**
@@ -91,7 +93,9 @@ export const MermaidPreviewPane = defineComponent({
       fitToViewport: async () => {
         await inlineViewportRef.value?.fitToViewport();
       },
-      getRootElement: () => inlineRootRef.value
+      getRootElement: () => inlineRootRef.value,
+      getSvgElement: () =>
+        inlineRootRef.value?.querySelector('svg') ?? null
     });
 
     return () => {

@@ -62,7 +62,7 @@ const DEMO_TAB_CONFIG: Record<DemoTabId, DemoTabConfig> = {
 | 数学公式 | \`remark-math\` + \`rehype-katex\`（\`math.strict: false\`） |
 | 代码高亮 | \`CodeHighLight\`（\`CodeBlock\` 组件） |
 | 图表 | 复杂 Mermaid 流程图样例 |
-| Mermaid 插件 | \`rehypeMermaid\` readme 回归清单（双引擎 / meta） |
+| Mermaid 插件 | \`rehypeMermaid\` readme 回归（双引擎 / meta / PNG 导出） |
 | 表格 | \`tableNodeParse\` + Element Plus \`ElTable\` |
 | Think 与自定义标签 | \`remarkThink\`（\`customElements\`）+ \`MergeThinkRemark\` 分组 |
 | 表单模板 | \`:::form\` 指令块 + JSON 模板 |
@@ -345,7 +345,7 @@ const DEMO_TAB_EXTRA: Record<
   },
   mermaid: {
     category: 'diagram',
-    description: 'rehypeMermaid 双引擎与 meta 覆盖回归'
+    description: 'rehypeMermaid 双引擎、meta 覆盖与卡片 PNG 导出'
   },
   mermaidRoundTrip: {
     category: 'diagram',
