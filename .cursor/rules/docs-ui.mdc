@@ -1,0 +1,71 @@
+---
+description: packages/docs 站点 UI 设计与实现约定（基于现有界面）
+globs: packages/docs/**/*.{vue,tsx,ts,scss,css}
+alwaysApply: false
+---
+
+# Docs UI 约定
+
+在 `packages/docs` 增改页面/组件时，**对齐现有视觉与结构**，勿引入另一套色板或布局语言。
+
+## 色板（Slate + Blue）
+
+| 用途 | 值 |
+|------|-----|
+| 页底 | `#f8fafc` |
+| 表面 | `#fff` |
+| 主文案 | `#0f172a` |
+| 次文案 | `#475569` / `#64748b` |
+| 弱文案 | `#94a3b8` |
+| 边框 | `#e2e8f0` |
+| 强调 | `#2563eb`（深 `#1d4ed8`） |
+| 选中底 | `#eff6ff` + 边 `#bfdbfe` |
+| 标签底 | `#f1f5f9` |
+| 通过 / 失败 | `#15803d` / `#b91c1c` |
+| 脏数据徽章 | 文 `#b45309` 底 `#fffbeb` |
+| 流式徽章 | 文 `#1d4ed8` 底 `#dbeafe` |
+
+链接默认 `#2563eb`。阴影用低透明度 slate：`rgba(15, 23, 42, 0.06~0.08)`。
+
+## 字体与间距
+
+- 正文字体：`Segoe UI` / `system-ui` / `PingFang SC` / `Microsoft YaHei`
+- 代码：`Consolas` / `Monaco`；行内 code 底 `#f1f5f9`、圆角 `4px`
+- 基准 `16px`、行高约 `1.6`；工具栏标签常用 `11~13px`
+- 圆角：标签 `4`、控件 `6~8`、卡片/面板 `10~12`、胶囊 `999`
+- 过渡：`0.15s~0.2s`；避免厚重多层级阴影与紫色主题（路线图 tag 例外可用 `#7c3aed` / `#f5f3ff`）
+
+## 布局骨架
+
+1. **站点壳**（`App.vue`）：sticky 顶栏高 `56px`、半透明白 + `backdrop-filter`；主区默认 `max-width: 1200px`；Demo / AST 测试页用 `docs-main--wide`。
+2. **Home**：居中 hero（badge → 标题 → 描述 → primary/ghost CTA → 安装命令黑底盒）+ 白底 `feature-card` 网格 + 架构格子。
+3. **Demo 工作台**：圆角 `12` 容器；header / toolbar / feature-panel / sidebar+双 pane；状态用 `status-badge` 胶囊。
+4. **AST+UI 测试页**：复用 `test/_shared/ast-ui-test-page.scss`；侧栏 sticky、chip 筛选、panel 白底描边；按钮 `.btn` / `.btn--ghost`。
+
+## 交互控件
+
+- **Primary**：蓝底白字；Home CTA 可用轻微渐变 + 轻阴影 hover 上移。
+- **Ghost**：白底、`#2563eb` 或深灰字 + `#e2e8f0`/`#cbd5e1` 边。
+- **选中态**：蓝字 + `#eff6ff` 底（导航、侧栏、view-switch、chip）。
+- **工具按钮**：白底细边；active 用蓝边 + `#eff6ff`。
+- 可点击区域提供 `title` / `aria-*`；loading 时 `disabled` + `cursor: wait`。
+
+## Markdown 业务 UI
+
+- **Think（Kimi 风）**：弱灰正文 `#8b8b8b`、左侧 `2px` 细线、可折叠 header；loading 文案「深度思考中」、spinner + 三点动画、强制展开；光标闪烁。样式见 `thinkElement.scss`，勿改成高对比卡片。
+- **代码块**：深色 header（`rgb(50,54,65)`）+ 语言标签 +「复制」；高亮走 `CodeHighLight`。
+- Demo 预览组件放 `components/markdown/`，与 `@nnnb/markdown/vue-ui` 引擎分层，勿把 docs 业务 UI 塞进 components 包。
+
+## 实现习惯
+
+- Vue SFC 用 `scoped`；测试页共享样式用非 scoped 的 `ast-ui-test-page` 类前缀。
+- TSX 自定义节点：`defineComponent` + BEM 式类名（如 `thinkGroupElementt__header`）。
+- 大体积 Demo 编辑器：`defineAsyncComponent` + `DemoLoading`；Home 可 prefetch。
+- 新增 UI 先复用现有 class 模式（`btn`、`tag`、`chip`、`panel`、`status-badge`），再开新皮肤。
+
+## 反例
+
+```scss
+// ❌ 新紫渐变主题、大圆角药丸堆、多阴影霓虹
+// ✅ 延续 slate 灰阶 + #2563eb 强调，卡片 12px、边框 #e2e8f0
+```

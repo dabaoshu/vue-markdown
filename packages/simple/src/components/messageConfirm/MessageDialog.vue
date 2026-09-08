@@ -6,20 +6,22 @@
           <slot name="header" :cancel="cancel">
             <div class="dialog-header">
               <div class="flex flex-c">
-                <MyIcon
+                <ElIcon
                   v-show="showIcon"
-                  :type="icon"
+                  :class="['mr-16', icon]"
                   style="font-size: 22px; color: red"
-                  class="mr-16"
-                ></MyIcon>
+                >
+                  <WarningFilled />
+                </ElIcon>
                 <div>{{ title }}</div>
               </div>
-              <MyIcon
-                type="icon-guanbi"
+              <ElIcon
                 class="close"
                 style="font-size: 14px"
                 @click="cancel"
-              ></MyIcon>
+              >
+                <Close />
+              </ElIcon>
             </div>
           </slot>
           <div class="dialog-body">
@@ -55,9 +57,9 @@
 </template>
 
 <script setup lang="ts">
-  import MyIcon from '@/components/myIcon';
+  import { Close, WarningFilled } from '@element-plus/icons-vue';
   import { computed, CSSProperties, onMounted, ref } from 'vue';
-  import { ElButton, ElConfigProvider } from 'element-plus';
+  import { ElButton, ElConfigProvider, ElIcon } from 'element-plus';
   import zhCn from 'element-plus/dist/locale/zh-cn.mjs';
 
   /**

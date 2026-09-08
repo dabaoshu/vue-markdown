@@ -40,7 +40,7 @@
     );
   });
 
-  const sendVal = `文件夹`;
+  const sendVal = ref(`文件夹`);
 
   const treeData = arrayToTree(
     [

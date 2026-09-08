@@ -106,16 +106,31 @@ flowchart LR
 \`\`\`
 `;
 
+/** 用例 8：卡片 PNG 下载 / 复制（SVG 光栅化） */
+const CASE_PNG_EXPORT = `## 用例 8：卡片 PNG 下载 / 复制
+
+预期：预览工具栏「下载」「复制」走 \`downloadSvgAsPng\` / \`copySvgAsPng\`，直接光栅化已渲染 SVG，**不使用 html2canvas 截整页**。点击后按钮短暂显示「导出中」，页面不应卡顿。
+
+\`\`\`mermaid
+mindmap
+  root((导出))
+    下载 PNG
+    复制图片
+    viewBox 尺寸
+\`\`\`
+`;
+
 /**
  * readme 回归演示全文（供「Mermaid 插件」Tab 载入）
  */
 export const MERMAID_README_DEMO_MARKDOWN = `# remark-mermaid 演示
 
-本 Tab 内容与 \`packages/components/remark-mermaid/readme.md\` 对齐，用于在 simple 预览中回归：
+本 Tab 内容与 \`packages/components/remark-mermaid/readme.md\` 对齐，用于在 docs Demo 预览中回归：
 
 - 双引擎：\`mermaid\` / \`beautiful\`
 - 块级 meta 覆盖（\`enableMetaOptions: true\`）
 - ASCII、仅源码、空块、错误 DSL
+- 卡片工具栏 PNG 下载 / 复制（SVG 光栅化，非 html2canvas）
 
 工具栏 **流式测试** 可观察 \`streamErrorGraceMs\` 宽限与 pending 文案。
 
@@ -127,6 +142,7 @@ ${[
   CASE_SOURCE_ONLY,
   CASE_EMPTY,
   CASE_INVALID_DSL,
-  CASE_SIDE_BY_SIDE
+  CASE_SIDE_BY_SIDE,
+  CASE_PNG_EXPORT
 ].join('\n')}
 `;

@@ -1,9 +1,11 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import vueJsx from '@vitejs/plugin-vue-jsx'; // 引入 Vue TSX 支持插件
 import path from 'path';
-import { readFileSync } from 'fs';
+import { readFileSync, promises as fs } from 'fs';
+import glob from 'fast-glob';
 import dts from 'vite-plugin-dts';
+
 
 /**
  * 读取当前包的 package.json，并汇总需要 external 的依赖名。
@@ -87,6 +89,41 @@ const resolveLibCssAssetName: import('rollup').OutputOptions['assetFileNames'] =
   return `assets/${fallbackName}`;
 };
 
+/**
+ * 将包内 `.scss` 源文件原样复制到 `dist/es` 与 `dist/lib`，
+ * 与 Vite 编译出的 `.css` 并存，方便消费方二次编译或覆盖变量。
+ */
+const copyScssSourcesPlugin = (): Plugin => ({
+  name: 'copy-scss-sources',
+  apply: 'build',
+  async closeBundle() {
+    const scssFiles = await glob('**/*.scss', {
+      cwd: PACKAGE_ROOT,
+      onlyFiles: true,
+      ignore: ['**/node_modules/**', '**/dist/**']
+    });
+
+    if (scssFiles.length === 0) {
+      return;
+    }
+
+    await Promise.all(
+      scssFiles.flatMap((relativePath) => {
+        const src = path.join(PACKAGE_ROOT, relativePath);
+        return (['es', 'lib'] as const).map(async (format) => {
+          const dest = path.join(outDir, format, relativePath);
+          await fs.mkdir(path.dirname(dest), { recursive: true });
+          await fs.copyFile(src, dest);
+        });
+      })
+    );
+
+    console.log(
+      `[copy-scss-sources] 已复制 ${scssFiles.length} 个 SCSS 到 dist/es 与 dist/lib`
+    );
+  }
+});
+
 export default defineConfig({
   plugins: [
     vue(),
@@ -100,7 +137,8 @@ export default defineConfig({
     createDtsPlugin({
       outputDir: path.join(outDir, './lib'),
       tsConfigFilePath: path.resolve(__dirname, './tsconfig.json')
-    })
+    }),
+    copyScssSourcesPlugin()
   ],
   build: {
     emptyOutDir: true,

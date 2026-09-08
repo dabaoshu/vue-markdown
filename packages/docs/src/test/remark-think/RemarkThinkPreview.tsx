@@ -1,7 +1,7 @@
 import { defineComponent, type PropType } from 'vue';
 import { MergeThinkRemark } from '@nnnb/markdown';
 import { VueMarkdown } from '@nnnb/markdown/vue-ui';
-import ThinkElement, { thinkGroupElementt } from '@/components/markdown/thinkElement';
+import { ThinkElement, thinkGroupElementt } from '@nnnb/markdown-ui';
 
 /**
  * 测试页专用预览：按用例 tags / merge 精确接线，避免 Demo 默认特性干扰断言。

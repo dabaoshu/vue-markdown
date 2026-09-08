@@ -2,6 +2,8 @@ const DEFAULT_EXPORT_PIXEL_RATIO = 2;
 const DEFAULT_EXPORT_BG_COLOR = '#ffffff';
 const DEFAULT_EXPORT_FONT_FAMILY =
   '"Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif';
+/** 导出画布最长边上限，避免超大 SVG 光栅化卡住主线程 */
+const MAX_EXPORT_EDGE = 4096;
 
 const IGNORED_NAMESPACE_URLS = new Set([
   'http://www.w3.org/1999/xhtml',
@@ -73,6 +75,9 @@ function sanitizeSvgForExport(
   fontFamily: string
 ): SVGSVGElement {
   const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement;
+  clonedSvg.style.removeProperty('width');
+  clonedSvg.style.removeProperty('height');
+  clonedSvg.style.removeProperty('max-width');
   if (stripForeignObject) {
     convertForeignObjectToSvgText(clonedSvg, fontFamily);
     clonedSvg.querySelectorAll('foreignObject').forEach((node) => node.remove());
@@ -88,19 +93,50 @@ function sanitizeSvgForExport(
 function getSvgExportSize(
   svgElement: SVGSVGElement
 ): { width: number; height: number } {
-  const rect = svgElement.getBoundingClientRect();
-  const widthAttr = Number.parseFloat(svgElement.getAttribute('width') || '0');
-  const heightAttr = Number.parseFloat(svgElement.getAttribute('height') || '0');
   const viewBox = svgElement.viewBox?.baseVal;
   const viewBoxWidth = viewBox?.width || 0;
   const viewBoxHeight = viewBox?.height || 0;
+  if (viewBoxWidth > 0 && viewBoxHeight > 0) {
+    return {
+      width: Math.ceil(viewBoxWidth),
+      height: Math.ceil(viewBoxHeight)
+    };
+  }
 
+  const widthAttr = Number.parseFloat(svgElement.getAttribute('width') || '0');
+  const heightAttr = Number.parseFloat(svgElement.getAttribute('height') || '0');
+  if (widthAttr > 0 && heightAttr > 0) {
+    return {
+      width: Math.ceil(widthAttr),
+      height: Math.ceil(heightAttr)
+    };
+  }
+
+  const rect = svgElement.getBoundingClientRect();
   return {
-    width: Math.ceil(Math.max(rect.width || 0, widthAttr || 0, viewBoxWidth || 0, 1)),
-    height: Math.ceil(
-      Math.max(rect.height || 0, heightAttr || 0, viewBoxHeight || 0, 1)
-    )
+    width: Math.ceil(Math.max(rect.width || 0, 1)),
+    height: Math.ceil(Math.max(rect.height || 0, 1))
   };
+}
+
+/**
+ * 将导出像素比限制在画布安全边长内
+ * @param width 逻辑宽度
+ * @param height 逻辑高度
+ * @param pixelRatio 期望像素比
+ * @returns {number} 实际使用的像素比
+ */
+function resolveExportPixelRatio(
+  width: number,
+  height: number,
+  pixelRatio: number
+): number {
+  const maxRatio = Math.min(
+    pixelRatio,
+    MAX_EXPORT_EDGE / Math.max(width, 1),
+    MAX_EXPORT_EDGE / Math.max(height, 1)
+  );
+  return Number.isFinite(maxRatio) && maxRatio > 0 ? maxRatio : 1;
 }
 
 /**
@@ -179,30 +215,43 @@ export async function rasterizeSvgToCanvas(
     fontFamily
   );
   const serialized = new XMLSerializer().serializeToString(clonedSvg);
-  const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(serialized)}`;
+  const svgBlob = new Blob([serialized], {
+    type: 'image/svg+xml;charset=utf-8'
+  });
+  const svgObjectUrl = URL.createObjectURL(svgBlob);
   const { width, height } = getSvgExportSize(clonedSvg);
+  const outputScale = resolveExportPixelRatio(width, height, pixelRatio);
   await document.fonts?.ready;
 
   return await new Promise<HTMLCanvasElement>((resolve, reject) => {
     const image = new Image();
-    image.decoding = 'sync';
+    image.decoding = 'async';
     image.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.max(1, Math.ceil(width * pixelRatio));
-      canvas.height = Math.max(1, Math.ceil(height * pixelRatio));
-      const context = canvas.getContext('2d');
-      if (!context) {
-        reject(new Error('无法创建画布上下文'));
-        return;
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.ceil(width * outputScale));
+        canvas.height = Math.max(1, Math.ceil(height * outputScale));
+        const context = canvas.getContext('2d');
+        if (!context) {
+          reject(new Error('无法创建画布上下文'));
+          return;
+        }
+        context.setTransform(outputScale, 0, 0, outputScale, 0, 0);
+        context.fillStyle = backgroundColor;
+        context.fillRect(0, 0, width, height);
+        context.drawImage(image, 0, 0, width, height);
+        resolve(canvas);
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error('图片绘制失败'));
+      } finally {
+        URL.revokeObjectURL(svgObjectUrl);
       }
-      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-      context.fillStyle = backgroundColor;
-      context.fillRect(0, 0, width, height);
-      context.drawImage(image, 0, 0, width, height);
-      resolve(canvas);
     };
-    image.onerror = () => reject(new Error('图片加载失败'));
-    image.src = svgDataUrl;
+    image.onerror = () => {
+      URL.revokeObjectURL(svgObjectUrl);
+      reject(new Error('图片加载失败'));
+    };
+    image.src = svgObjectUrl;
   });
 }
 

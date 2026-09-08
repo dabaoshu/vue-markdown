@@ -1,6 +1,7 @@
 {
   "name": "@nnnb/markdown",
   "version": "1.0.1",
+  "type": "module",
   "scripts": {
     "build": "vite build",
     "build:style": "esno ./scripts/style"
@@ -62,6 +63,8 @@
     "**/*.scss",
     "**/*.css",
     "**/codeHighLight/ui/style.ts",
-    "**/vue-codeHighLight.tsx"
+    "**/vue-codeHighLight.tsx",
+    "**/markdown/styles/index.ts",
+    "**/markdown/vue-markdown.tsx"
   ]
 }

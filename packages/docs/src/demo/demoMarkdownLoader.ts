@@ -1,5 +1,6 @@
 import type { DemoTabId } from './demoData';
 import { DEMO_MARKDOWN } from './demoData';
+import type { TabContentLoader } from '@nnnb/markdown-ui/examples';
 
 /** 按需加载的大体积示例缓存 */
 const markdownCache = new Map<DemoTabId, string>();
@@ -41,3 +42,9 @@ ${MERMAID_COMPLEX_SAMPLES_MARKDOWN}
   markdownCache.set(id, markdown);
   return markdown;
 }
+
+export const loadWorkbenchTab: TabContentLoader = async (tabId, signal) => {
+  const content = await loadDemoMarkdown(tabId as DemoTabId);
+  if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+  return content;
+};
