@@ -3,31 +3,78 @@
     "version": "1.0.5",
     "scripts": {
       "build": "vite build",
-      "build:style": "esno ./scripts/style"
+      "build:style": "esno ./scripts/style",
+      "prepublishOnly": "pnpm run build",
+      "publish:dry": "pnpm publish --dry-run --access public --no-git-checks",
+      "release": "pnpm publish --access public --no-git-checks"
     },
-    "module": "./dist/es/index.mjs",
-    "main": "./dist/lib/index.js",
-    "types": "./dist/es/index.d.ts",
+    "module": "./index.ts",
+    "main": "./index.ts",
+    "types": "./index.ts",
     "exports": {
       ".": {
-        "types": "./dist/es/index.d.ts",
-        "import": "./dist/es/index.mjs",
-        "require": "./dist/lib/index.js",
-        "default": "./dist/lib/index.js"
+        "types": "./index.ts",
+        "import": "./index.ts",
+        "default": "./index.ts"
       },
       "./vue-ui": {
-        "types": "./dist/es/vue-ui.d.ts",
-        "import": "./dist/es/vue-ui.mjs",
-        "require": "./dist/lib/vue-ui.js",
-        "default": "./dist/lib/vue-ui.js"
+        "types": "./vue-ui.ts",
+        "import": "./vue-ui.ts",
+        "default": "./vue-ui.ts"
       },
+      "./markdown/styles": "./markdown/styles/index.ts",
+      "./markdown/styles/markdown.scss": "./markdown/styles/markdown.scss",
+      "./markdown/markdown.module.scss": "./markdown/styles/markdown.scss",
+      "./codeHighLight/ui/style": "./codeHighLight/ui/style.ts",
+      "./*": "./*",
       "./package.json": "./package.json"
     },
     "typesVersions": {
       "*": {
         "vue-ui": [
-          "./dist/es/vue-ui.d.ts"
+          "./vue-ui.ts"
         ]
+      }
+    },
+    "publishConfig": {
+      "access": "public",
+      "registry": "https://registry.npmjs.org/",
+      "main": "./dist/lib/index.js",
+      "module": "./dist/es/index.mjs",
+      "types": "./dist/es/index.d.ts",
+      "exports": {
+        ".": {
+          "types": "./dist/es/index.d.ts",
+          "import": "./dist/es/index.mjs",
+          "require": "./dist/lib/index.js",
+          "default": "./dist/lib/index.js"
+        },
+        "./vue-ui": {
+          "types": "./dist/es/vue-ui.d.ts",
+          "import": "./dist/es/vue-ui.mjs",
+          "require": "./dist/lib/vue-ui.js",
+          "default": "./dist/lib/vue-ui.js"
+        },
+        "./markdown/styles": {
+          "import": "./dist/es/markdown/styles/index.mjs",
+          "require": "./dist/lib/markdown/styles/index.js",
+          "default": "./dist/es/markdown/styles/index.mjs"
+        },
+        "./markdown/styles/markdown.scss": "./dist/es/markdown/styles/markdown.scss",
+        "./markdown/markdown.module.scss": "./dist/es/markdown/styles/markdown.scss",
+        "./codeHighLight/ui/style": {
+          "import": "./dist/es/codeHighLight/ui/style.mjs",
+          "require": "./dist/lib/codeHighLight/ui/style.js",
+          "default": "./dist/es/codeHighLight/ui/style.mjs"
+        },
+        "./package.json": "./package.json"
+      },
+      "typesVersions": {
+        "*": {
+          "vue-ui": [
+            "./dist/es/vue-ui.d.ts"
+          ]
+        }
       }
     },
     "dependencies": {

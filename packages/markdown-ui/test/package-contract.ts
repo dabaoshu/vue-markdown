@@ -20,13 +20,25 @@ assert.equal(pkg.exports['./examples'].require, undefined);
 assert.equal(pkg.exports['./style.css'], './dist/style.css');
 assert.equal(pkg.dependencies['@nnnb/markdown'], 'workspace:^');
 assert.ok(markdownPkg.exports['.'], '@nnnb/markdown root export is required');
-assert.ok(
-  markdownPkg.exports['./vue-ui'],
-  '@nnnb/markdown vue-ui export is required'
+assert.equal(
+  markdownPkg.exports['.'].import,
+  './index.ts',
+  'workspace consumers resolve @nnnb/markdown from source, not dist'
 );
 assert.equal(
-  markdownPkg.exports['./markdown/markdown.module.scss'],
-  './markdown/markdown.module.scss'
+  markdownPkg.exports['./vue-ui'].import,
+  './vue-ui.ts',
+  'workspace consumers resolve @nnnb/markdown/vue-ui from source, not dist'
+);
+assert.equal(
+  markdownPkg.exports['./markdown/styles/markdown.scss'],
+  './markdown/styles/markdown.scss',
+  'workspace must export markdown theme scss from source'
+);
+assert.equal(
+  markdownPkg.publishConfig?.exports['./vue-ui']?.import,
+  './dist/es/vue-ui.mjs',
+  'npm publish must still map vue-ui to dist'
 );
 
 for (const exportName of [

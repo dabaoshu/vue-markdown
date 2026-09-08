@@ -10,7 +10,8 @@
     "build:runner": "npm --prefix ./devRunner run build",
     "build:docs": "pnpm --filter @nnnb/docs build",
     "build:ui": "pnpm --filter @nnnb/markdown-ui build",
-    "test:ui": "pnpm --filter @nnnb/markdown-ui test:contract"
+    "test:ui": "pnpm --filter @nnnb/markdown-ui test:contract",
+    "publish:markdown": "pnpm --filter @nnnb/markdown release"
   },
   "dependencies": {
     "@vitejs/plugin-vue-jsx": "^4.0.0",
