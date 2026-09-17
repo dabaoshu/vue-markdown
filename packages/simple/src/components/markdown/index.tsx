@@ -2,7 +2,8 @@ import { defineComponent } from 'vue';
 import {
   tableNodeParse,
   rehypeMermaid,
-  MergeThinkRemark
+  MergeThinkRemark,
+  remarkHttpResource
 } from '@nnnb/markdown';
 import { VueMarkdown } from '@nnnb/markdown/vue-ui';
 import {
@@ -34,7 +35,8 @@ export default defineComponent({
           remarkPlugins={[
             MergeThinkRemark,
             RemarkBreaks,
-            [RemarkGfm, { singleTilde: false }]
+            [RemarkGfm, { singleTilde: false }],
+            [remarkHttpResource, { promoteBareUrls: true }]
           ]}
           math={{
             strict: false,

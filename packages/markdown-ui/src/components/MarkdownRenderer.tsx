@@ -3,7 +3,8 @@ import { CodeBlock } from './code/codeBlock';
 import {
   tableNodeParse,
   rehypeMermaid,
-  MergeThinkRemark
+  MergeThinkRemark,
+  remarkHttpResource
 } from '@nnnb/markdown';
 import { VueMarkdown } from '@nnnb/markdown/vue-ui';
 import ThinkElement, { thinkGroupElementt } from './think/thinkElement';
@@ -89,6 +90,7 @@ function buildMarkdownRenderOptions(features: MarkdownFeatures) {
   if (features.gfm) {
     remarkPlugins.push([RemarkGfm, { singleTilde: false }]);
   }
+  remarkPlugins.push([remarkHttpResource, { promoteBareUrls: true }]);
 
   const rehypePlugins: unknown[] = [];
   if (features.mermaid) {

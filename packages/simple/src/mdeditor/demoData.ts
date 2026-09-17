@@ -13,6 +13,7 @@ export type DemoTabId =
   | 'mermaid'
   | 'mermaidRoundTrip'
   | 'table'
+  | 'httpResource'
   | 'think'
   | 'form';
 
@@ -50,6 +51,7 @@ const DEMO_TAB_CONFIG: Record<DemoTabId, DemoTabConfig> = {
 | 图表 | 复杂 Mermaid 流程图样例 |
 | Mermaid 插件 | \`rehypeMermaid\` readme 回归（双引擎 / meta / PNG 导出） |
 | 表格 | \`tableNodeParse\` + Element Plus \`ElTable\` |
+| HTTP 资源分类 | \`remarkHttpResource\` |
 | Think 与自定义标签 | \`remarkThink\`（\`customElements\`）+ \`MergeThinkRemark\` 分组 |
 | 表单模板 | \`:::form\` 指令块 + JSON 模板 |
 
@@ -208,6 +210,29 @@ flowchart LR
 `
   },
 
+  httpResource: {
+    label: 'HTTP 资源分类',
+    markdown: `# HTTP 资源分类（remarkHttpResource）
+
+引擎只打标，不改成卡片。下面这些地址应带 \`data-http-kind\`。
+
+图片链接（仍是 a，不是自动 img）：
+[封面](https://cdn.example.com/cover.PNG?w=800)
+
+图片语法：
+![logo](https://cdn.example.com/logo.webp)
+
+文档：
+[说明书](https://example.com/manual.pdf)
+
+无扩展名网页：
+[主页](https://example.com/about)
+
+裸 URL（simple 开启 promoteBareUrls）：
+https://example.com/file.zip
+`
+  },
+
   think: {
     label: 'Think / 自定义',
     markdown: `# Think 与自定义标签（remarkThink + MergeThinkRemark）
@@ -295,6 +320,7 @@ const DEMO_TAB_ORDER: DemoTabId[] = [
   'mermaid',
   'mermaidRoundTrip',
   'table',
+  'httpResource',
   'think',
   'form'
 ];
