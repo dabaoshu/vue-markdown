@@ -13,3 +13,4 @@ export {
   normalizeExtToken
 } from './core/extensions';
 export { classifyHttpUrl, extFromPathname } from './core/classifyHttpUrl';
+export { remarkHttpResource, annotateHttpResourceNode } from './engine/remarkHttpResource';
