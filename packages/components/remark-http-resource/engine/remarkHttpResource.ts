@@ -1,6 +1,7 @@
 import { visit } from 'unist-util-visit';
 import { classifyHttpUrl } from '../core/classifyHttpUrl';
 import type { HttpResource, HttpResourceOptions } from '../core/types';
+import { promoteBareHttpUrls } from './promoteBareUrls';
 
 /** 可打标的 mdast 节点 */
 interface UrlNode {
@@ -57,6 +58,9 @@ export function annotateHttpResourceNode(
  */
 export function remarkHttpResource(options: HttpResourceOptions = {}) {
   return (tree: unknown) => {
+    if (options.promoteBareUrls) {
+      promoteBareHttpUrls(tree);
+    }
     visit(tree as { type: string }, (node: UrlNode) => {
       if (node.type === 'link' || node.type === 'image') {
         annotateHttpResourceNode(node, options);

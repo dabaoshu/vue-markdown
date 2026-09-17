@@ -100,5 +100,45 @@ export const REMARK_HTTP_RESOURCE_CASES: RemarkHttpResourceTestCase[] = [
       resources: [],
       contentIncludes: ['https://x.com/a.png']
     }
+  },
+  {
+    id: 'promote-on-bare',
+    title: '开启后提升裸 URL',
+    group: 'promote',
+    description: 'text 中的 https 图片地址变成 link 且 kind=image。',
+    markdown: '见 https://x.com/a.png 结尾。',
+    gfm: false,
+    options: { promoteBareUrls: true },
+    expect: {
+      linkCount: 1,
+      resources: [{ type: 'link', kind: 'image', ext: 'png', urlIncludes: 'https://x.com/a.png' }],
+      contentIncludes: ['见', '结尾']
+    }
+  },
+  {
+    id: 'promote-strip-punct',
+    title: '提升时剥掉末尾标点',
+    group: 'promote',
+    description: '句号不进入 url。',
+    markdown: '打开 https://x.com/a.png。',
+    gfm: false,
+    options: { promoteBareUrls: true },
+    expect: {
+      resources: [{ type: 'link', kind: 'image', ext: 'png', urlIncludes: 'https://x.com/a.png' }],
+      contentIncludes: ['。']
+    }
+  },
+  {
+    id: 'promote-skip-existing-link',
+    title: '已是链接的不再拆一次',
+    group: 'promote',
+    description: 'markdown 链接内部 text 不二次提升。',
+    markdown: '[封面](https://x.com/a.png)',
+    gfm: false,
+    options: { promoteBareUrls: true },
+    expect: {
+      linkCount: 1,
+      resources: [{ type: 'link', kind: 'image', ext: 'png' }]
+    }
   }
 ];
