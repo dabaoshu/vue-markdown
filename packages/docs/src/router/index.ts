@@ -42,6 +42,11 @@ export const router = createRouter({
       component: () => import('@/pages/RehypeMermaidTest.vue')
     },
     {
+      path: '/test/remark-http-resource',
+      name: 'RemarkHttpResourceTest',
+      component: () => import('@/pages/RemarkHttpResourceTest.vue')
+    },
+    {
       path: '/:pathMatch(.*)*',
       redirect: '/'
     }

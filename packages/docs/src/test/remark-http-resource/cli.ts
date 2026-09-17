@@ -1,12 +1,6 @@
 import { runClassifyHttpUrlSuite } from './runClassify';
-import { REMARK_HTTP_RESOURCE_CASES } from './cases';
-import { runRemarkHttpResourceCase } from './helpers';
-import { runAstSuiteCli } from '../_shared/astUiHelpers';
+import { runRemarkHttpResourceCli } from './run';
 
 const classifyOk = runClassifyHttpUrlSuite();
-const astOk = runAstSuiteCli(
-  'remark-http-resource',
-  REMARK_HTTP_RESOURCE_CASES,
-  runRemarkHttpResourceCase
-);
+const { astOk } = runRemarkHttpResourceCli();
 process.exit(classifyOk && astOk ? 0 : 1);

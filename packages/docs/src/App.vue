@@ -38,6 +38,13 @@
           Mermaid
         </RouterLink>
         <RouterLink
+          to="/test/remark-http-resource"
+          class="docs-nav-link"
+          active-class="is-active"
+        >
+          HTTP
+        </RouterLink>
+        <RouterLink
           to="/test/remark-think"
           class="docs-nav-link"
           active-class="is-active"
@@ -76,7 +83,8 @@ const TEST_ROUTE_NAMES = new Set([
   'RemarkGfmTest',
   'RemarkMathTest',
   'CodeHighlightTest',
-  'RehypeMermaidTest'
+  'RehypeMermaidTest',
+  'RemarkHttpResourceTest'
 ]);
 
 const isWidePage = computed(
