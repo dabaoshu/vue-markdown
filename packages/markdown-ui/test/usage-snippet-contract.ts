@@ -15,7 +15,8 @@ const allOff: MarkdownFeatures = {
   think: false,
   customTags: false,
   codeHighlight: false,
-  elTable: false
+  elTable: false,
+  httpResource: false
 };
 
 const gfmOnly: MarkdownFeatures = { ...allOff, gfm: true, breaks: true };
@@ -26,11 +27,15 @@ assert.match(buildVueMarkdownSnippet(gfmOnly), /remark-gfm/);
 assert.match(buildVueMarkdownSnippet(gfmOnly), /remark-breaks/);
 assert.doesNotMatch(buildVueMarkdownSnippet(gfmOnly), /rehypeMermaid/);
 assert.doesNotMatch(buildVueMarkdownSnippet(gfmOnly), /katex/);
+assert.doesNotMatch(buildVueMarkdownSnippet(gfmOnly), /remarkHttpResource/);
 assert.deepEqual(listEnabledFeatureLabels(gfmOnly), ['GFM', '换行保留']);
 assert.equal(describeEnabledFeatures(gfmOnly), 'GFM · 换行保留');
 
 const mermaidOn: MarkdownFeatures = { ...allOff, mermaid: true };
 assert.match(buildVueMarkdownSnippet(mermaidOn), /rehypeMermaid/);
 assert.match(buildVueMarkdownSnippet(mermaidOn), /MermaidInteractiveBlock/);
+
+const httpResourceOn: MarkdownFeatures = { ...allOff, httpResource: true };
+assert.match(buildVueMarkdownSnippet(httpResourceOn), /remarkHttpResource/);
 
 console.log('usage snippet contract: ok');

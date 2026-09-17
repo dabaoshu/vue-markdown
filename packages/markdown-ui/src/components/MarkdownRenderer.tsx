@@ -24,6 +24,7 @@ export interface MarkdownFeatures {
   codeHighlight: boolean;
   customTags: boolean;
   elTable: boolean;
+  httpResource: boolean;
 }
 
 export interface MarkdownRendererProps {
@@ -39,7 +40,8 @@ export const DEFAULT_MARKDOWN_FEATURES: MarkdownFeatures = {
   think: true,
   codeHighlight: true,
   customTags: true,
-  elTable: true
+  elTable: true,
+  httpResource: true
 };
 
 /** Mermaid 卡片较重，按需异步加载 */
@@ -90,7 +92,9 @@ function buildMarkdownRenderOptions(features: MarkdownFeatures) {
   if (features.gfm) {
     remarkPlugins.push([RemarkGfm, { singleTilde: false }]);
   }
-  remarkPlugins.push([remarkHttpResource, { promoteBareUrls: true }]);
+  if (features.httpResource) {
+    remarkPlugins.push([remarkHttpResource, { promoteBareUrls: true }]);
+  }
 
   const rehypePlugins: unknown[] = [];
   if (features.mermaid) {

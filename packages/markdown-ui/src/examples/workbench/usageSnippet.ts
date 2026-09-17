@@ -79,6 +79,10 @@ export function buildVueMarkdownSnippet(features: MarkdownFeatures): string {
     extraImports.push(`import RemarkGfm from 'remark-gfm';`);
     remarkParts.push('[RemarkGfm, { singleTilde: false }]');
   }
+  if (features.httpResource) {
+    engineImports.push('remarkHttpResource');
+    remarkParts.push('[remarkHttpResource, { promoteBareUrls: true }]');
+  }
   if (features.math) {
     extraImports.push(`import 'katex/dist/katex.min.css';`);
     setupLines.push(`const math = { strict: false, remarkOptions: {}, rehypeOptions: {} };`);

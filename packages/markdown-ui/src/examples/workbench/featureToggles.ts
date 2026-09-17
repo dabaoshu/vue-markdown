@@ -12,6 +12,7 @@ export interface WorkbenchFeatureToggleMeta {
 /** 与线上「特性配置」开关一一对应 */
 export const WORKBENCH_FEATURE_TOGGLES: WorkbenchFeatureToggleMeta[] = [
   { key: 'gfm', label: 'GFM', hint: 'remark-gfm：表格、任务列表等' },
+  { key: 'httpResource', label: 'HTTP 资源', hint: 'remarkHttpResource：按扩展名给 http(s) 链接打标' },
   { key: 'breaks', label: '换行保留', hint: 'remark-breaks' },
   { key: 'math', label: '数学公式', hint: 'remark-math + rehype-katex' },
   { key: 'mermaid', label: 'Mermaid', hint: 'rehypeMermaid 图表' },

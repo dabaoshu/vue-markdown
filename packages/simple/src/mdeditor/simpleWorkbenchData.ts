@@ -22,7 +22,8 @@ export const initialSimpleFeatures: MarkdownFeatures = {
   think: false,
   customTags: true,
   codeHighlight: true,
-  elTable: true
+  elTable: true,
+  httpResource: true
 };
 
 export const loadSimpleWorkbenchTab: TabContentLoader = async (tabId, signal) => {
