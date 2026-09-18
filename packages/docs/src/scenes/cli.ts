@@ -1,6 +1,8 @@
+import { buildAttachmentPreview } from './attachmentPreviewModel';
 import { pickCannedReply } from './cannedReplies';
 import { canSendFollowUp } from './resolveSceneId';
 import { DEFAULT_SCENE_ID, MAX_FOLLOW_UPS } from './constants';
+import { createEmptyIntakeForm, validateIntakeForm } from './intakeValidation';
 import { resolveSceneId } from './resolveSceneId';
 import { getScene, sceneList } from './sceneData';
 import { getSceneFeatures } from './sceneFeatures';
@@ -56,5 +58,45 @@ passed =
 passed =
   check('reasoning still think', pickCannedReply('reasoning', '为什么').includes('<think>')) &&
   passed;
+
+const empty = createEmptyIntakeForm();
+passed = check('default satisfaction', empty.satisfaction === 60) && passed;
+passed =
+  check('name required', validateIntakeForm(empty).ok === false) && passed;
+passed =
+  check(
+    'urgent reason',
+    validateIntakeForm({ ...empty, name: '李', urgent: true, reason: '' }).ok === false
+  ) && passed;
+passed =
+  check(
+    'non-urgent ok',
+    validateIntakeForm({ ...empty, name: '李', urgent: false }).ok === true
+  ) && passed;
+passed =
+  check('unmarked skip', buildAttachmentPreview({ kind: '', ext: '', href: './a.png', title: 'x' }) === null) &&
+  passed;
+passed =
+  check(
+    'failed image lightbox',
+    buildAttachmentPreview({
+      kind: 'image',
+      ext: 'png',
+      href: 'https://example.com/x.png',
+      title: 'x',
+      imageFailed: true
+    })?.mode === 'image'
+  ) && passed;
+passed =
+  check(
+    'failed image flag',
+    buildAttachmentPreview({
+      kind: 'image',
+      ext: 'png',
+      href: 'https://example.com/x.png',
+      title: 'x',
+      imageFailed: true
+    })?.failed === true
+  ) && passed;
 
 process.exit(passed ? 0 : 1);
