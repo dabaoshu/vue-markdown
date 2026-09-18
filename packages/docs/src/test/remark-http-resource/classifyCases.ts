@@ -34,6 +34,34 @@ export const CLASSIFY_HTTP_URL_CASES: ClassifyHttpUrlCase[] = [
     expect: { kind: 'document', ext: 'pdf', url: 'https://x.com/report.pdf' }
   },
   {
+    id: 'document-xlsx',
+    title: '文档：xlsx',
+    description: 'xlsx 归 document。',
+    url: 'https://x.com/report.xlsx',
+    expect: { kind: 'document', ext: 'xlsx', url: 'https://x.com/report.xlsx' }
+  },
+  {
+    id: 'archive-zip',
+    title: '压缩包：zip',
+    description: 'zip 归 archive。',
+    url: 'https://x.com/file.zip',
+    expect: { kind: 'archive', ext: 'zip', url: 'https://x.com/file.zip' }
+  },
+  {
+    id: 'audio-mp3',
+    title: '音频：mp3',
+    description: 'mp3 归 audio。',
+    url: 'https://x.com/voice.mp3',
+    expect: { kind: 'audio', ext: 'mp3', url: 'https://x.com/voice.mp3' }
+  },
+  {
+    id: 'video-mp4',
+    title: '视频：mp4',
+    description: 'mp4 归 video。',
+    url: 'https://x.com/clip.mp4',
+    expect: { kind: 'video', ext: 'mp4', url: 'https://x.com/clip.mp4' }
+  },
+  {
     id: 'last-ext-only-txt',
     title: '只认最后一个后缀',
     description: 'file.jpg.txt 的 txt 无默认匹配，kind 为 webpage。',

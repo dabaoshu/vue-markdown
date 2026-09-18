@@ -134,6 +134,16 @@ export function assertRemarkHttpResourceCase(
       );
     }
   }
+
+  if (expectation.unannotatedImageCount !== undefined) {
+    const count = images.filter((node) => !node.data?.httpResource).length;
+    if (count !== expectation.unannotatedImageCount) {
+      fail(
+        testCase,
+        `unannotatedImageCount 期望 ${expectation.unannotatedImageCount}，实际 ${count}`
+      );
+    }
+  }
 }
 
 export type RemarkHttpResourceCaseResult = AstUiCaseResult<TestTreeNode>;

@@ -191,6 +191,7 @@ const GROUP_LABELS: Record<RemarkHttpResourceCaseGroup | 'all', string> = {
   all: '全部',
   link: '链接',
   image: '图片',
+  mix: '混排',
   promote: '裸 URL',
   edge: '边界'
 };

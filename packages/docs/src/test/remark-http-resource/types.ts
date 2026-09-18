@@ -4,6 +4,7 @@ import type { HttpResource, HttpResourceOptions } from '../../../../components/r
 export type RemarkHttpResourceCaseGroup =
   | 'link'
   | 'image'
+  | 'mix'
   | 'promote'
   | 'edge';
 
@@ -20,6 +21,7 @@ export interface RemarkHttpResourceExpectation {
   imageCount?: number;
   resources?: HttpResourceNodeExpect[];
   unannotatedLinkCount?: number;
+  unannotatedImageCount?: number;
   contentIncludes?: string[];
   ui?: AstUiExpectation;
 }
