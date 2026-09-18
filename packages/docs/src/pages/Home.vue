@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { useRouter } from 'vue-router';
 import type { DemoTabId } from '@/demo/demoData';
+import { sceneList } from '@/scenes/sceneData';
+import type { SceneId } from '@/scenes/types';
 
 /**
  * 特性卡片定义
@@ -31,6 +33,9 @@ const router = useRouter();
 /** 是否已开始预加载 Demo 相关 chunk */
 let demoPrefetchStarted = false;
 
+/** 是否已开始预加载业务场景相关 chunk */
+let scenesPrefetchStarted = false;
+
 /**
  * 预加载 Demo 页与编辑器 chunk，降低从 Home 跳转时的白屏/卡顿
  */
@@ -40,6 +45,19 @@ function prefetchDemoBundle() {
   void import('@/pages/Demo.vue');
   void import('@/demo/MarkdownDemoEditor.vue');
 }
+
+/**
+ * 预加载业务场景页与阅读器 chunk，只执行一次。
+ */
+function prefetchScenesBundle() {
+  if (scenesPrefetchStarted) return;
+  scenesPrefetchStarted = true;
+  void import('@/pages/Scenes.vue');
+  void import('@/scenes/SceneReader.vue');
+}
+
+/** 首页展示的主故事场景（不含短 clip） */
+const storyScenes = sceneList.filter((s) => s.group === 'story');
 
 /** 核心能力展示卡片 */
 const features: FeatureCard[] = [
@@ -154,6 +172,15 @@ function openDemo(tabId: DemoTabId) {
 }
 
 /**
+ * 跳转到业务场景页并预选 Tab
+ * @param id 场景标识
+ */
+function openScene(id: SceneId) {
+  prefetchScenesBundle();
+  router.push({ path: '/scenes', query: { tab: id } });
+}
+
+/**
  * 特性卡片是否可跳转 Demo
  * @param feature 特性卡片
  */
@@ -172,12 +199,20 @@ function canOpenDemo(feature: FeatureCard): feature is FeatureCard & { demoTab: 
       </p>
       <div class="hero-actions">
         <RouterLink
-          to="/demo"
+          to="/scenes"
           class="btn btn--primary"
+          @mouseenter="prefetchScenesBundle"
+          @focus="prefetchScenesBundle"
+        >
+          查看业务场景
+        </RouterLink>
+        <RouterLink
+          to="/demo"
+          class="btn btn--ghost"
           @mouseenter="prefetchDemoBundle"
           @focus="prefetchDemoBundle"
         >
-          打开在线 Demo
+          功能 Demo
         </RouterLink>
         <a
           class="btn btn--ghost"
@@ -190,6 +225,24 @@ function canOpenDemo(feature: FeatureCard): feature is FeatureCard & { demoTab: 
       </div>
       <div class="install-box">
         <code>pnpm add @nnnb/markdown highlight.js lodash</code>
+      </div>
+    </section>
+
+    <section class="features">
+      <h2 class="section-title">业务场景</h2>
+      <div class="feature-grid">
+        <article
+          v-for="scene in storyScenes"
+          :key="scene.id"
+          class="feature-card"
+          @mouseenter="prefetchScenesBundle"
+        >
+          <h3 class="feature-card__title">{{ scene.label }}</h3>
+          <p class="feature-card__desc">{{ scene.description }}</p>
+          <button type="button" class="feature-card__link" @click="openScene(scene.id)">
+            打开场景 →
+          </button>
+        </article>
       </div>
     </section>
 
