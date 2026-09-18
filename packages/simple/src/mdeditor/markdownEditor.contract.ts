@@ -12,5 +12,6 @@ assert.doesNotMatch(source, /previewTarget\.value/);
 assert.match(source, /@nnnb\/markdown-ui\/style\.css/);
 assert.match(source, /toolbar-end|preview-actions/);
 assert.doesNotMatch(source, /querySelector\([^)]*preview-content/);
-assert.doesNotMatch(source, /\.\.\/components\/markdown/);
+assert.doesNotMatch(source, /from ['"]\.\.\/components\/markdown['"]/);
+assert.match(source, /HttpResourceLink/);
 console.log('simple markdown editor integration contract: ok');

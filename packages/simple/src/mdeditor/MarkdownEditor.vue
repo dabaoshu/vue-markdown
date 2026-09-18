@@ -6,6 +6,7 @@
     v-model:features="features"
     :tabs="simpleWorkbenchTabs"
     :load-tab-content="loadSimpleWorkbenchTab"
+    :renderer-components="rendererComponents"
   >
     <template #toolbar-end>
       <button class="tool-btn" :disabled="!exportTarget || exportBusy" @click="handlePreviewPdf">预览 PDF</button>
@@ -45,14 +46,27 @@ import {
 } from '@nnnb/markdown';
 import { MarkdownWorkbench, type MarkdownWorkbenchExpose } from '@nnnb/markdown-ui';
 import {
+  DemoBusinessImage,
+  DemoBusinessLink,
+  withHttpResourceMark
+} from '../components/markdown/HttpResourceLink';
+import {
   initialSimpleFeatures,
   loadSimpleWorkbenchTab,
   simpleWorkbenchTabs
 } from './simpleWorkbenchData';
 
+/**
+ * 预览侧标签映射。业务已有自定义 a/img 时包一层分类徽标，而不是覆盖掉原组件。
+ */
+const rendererComponents = {
+  a: withHttpResourceMark(DemoBusinessLink),
+  // img: withHttpResourceMark(DemoBusinessImage)
+};
+
 const workbenchRef = ref<MarkdownWorkbenchExpose | null>(null);
 const source = ref('');
-const activeTab = ref('diagrams');
+const activeTab = ref('httpResource');
 const features = ref({ ...initialSimpleFeatures });
 const exportTarget = computed(
   () => workbenchRef.value?.previewTarget ?? null
