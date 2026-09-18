@@ -13,8 +13,12 @@ export type DemoTabId =
   | 'mermaid'
   | 'mermaidRoundTrip'
   | 'table'
+  | 'httpResource'
   | 'think'
   | 'form';
+
+/** 演示分类标识，与 docs 工作台侧栏分组一致 */
+export type DemoCategoryId = 'basic' | 'diagram' | 'extend';
 
 /**
  * 单个演示 Tab 元数据
@@ -22,7 +26,10 @@ export type DemoTabId =
 export interface DemoTabMeta {
   id: DemoTabId;
   label: string;
-}  
+  category: DemoCategoryId;
+  /** 一句话说明当前示例验证的能力 */
+  description: string;
+}
 
 /**
  * 单个演示 Tab 的完整配置
@@ -50,6 +57,7 @@ const DEMO_TAB_CONFIG: Record<DemoTabId, DemoTabConfig> = {
 | 图表 | 复杂 Mermaid 流程图样例 |
 | Mermaid 插件 | \`rehypeMermaid\` readme 回归（双引擎 / meta / PNG 导出） |
 | 表格 | \`tableNodeParse\` + Element Plus \`ElTable\` |
+| HTTP 资源分类 | \`remarkHttpResource\` 打标；图片含加载成功 / 失败 |
 | Think 与自定义标签 | \`remarkThink\`（\`customElements\`）+ \`MergeThinkRemark\` 分组 |
 | 表单模板 | \`:::form\` 指令块 + JSON 模板 |
 
@@ -208,6 +216,65 @@ flowchart LR
 `
   },
 
+  httpResource: {
+    label: 'HTTP 资源分类',
+    markdown: `# HTTP 资源分类（remarkHttpResource）
+
+引擎只打标。\`kind=image\` 的 \`link\` / \`image\` 在 simple 里会走图片组件，可对照 **加载成功（绿框）** 与 **加载失败（红框）**。
+
+## 图片语法 \`![alt](url)\`
+
+加载成功（pathname 带图片后缀，地址可访问）：
+
+![W3C 标志 PNG](https://www.w3.org/Icons/w3c_home.png)
+
+![GitHub Mark PNG](https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png)
+
+![WebP 示例](https://www.gstatic.com/webp/gallery/4.webp)
+
+![西柚 JPEG](https://interactive-examples.mdn.mozilla.net/media/cc0-images/grapefruit-slice-332-332.jpg)
+
+加载失败（仍是 image，资源不存在）：
+
+![W3C 上不存在的 PNG](https://www.w3.org/Icons/http-resource-demo-missing.png)
+
+![gstatic 上不存在的 WebP](https://www.gstatic.com/webp/gallery/http-resource-demo-missing.webp)
+
+## 图片链接 \`[text](url)\`
+
+节点仍是 \`link\`，\`kind\` 仍是 \`image\`。simple 预览按图片打开。
+
+成功：[GitHub 封面](https://github.githubassets.com/images/modules/logos_page/GitHub-Logo.png)
+
+失败：[失效封面](https://github.githubassets.com/images/modules/logos_page/http-resource-demo-missing.PNG?w=800)
+
+## 其它类型（仍是链接，不发起图片加载）
+
+文档：[说明书 PDF](https://example.com/manual.pdf)
+
+表格：[报表 xlsx](https://example.com/report.xlsx)
+
+压缩包裸 URL（\`promoteBareUrls: true\`）：
+https://example.com/file.zip
+
+音频：[语音 mp3](https://example.com/voice.mp3)
+
+视频：[片段 mp4](https://example.com/clip.mp4)
+
+网页（无后缀）：[主页](https://example.com/about)
+
+网页（html）：[文档页](https://example.com/index.html)
+
+## 边界（不应打标）
+
+相对路径：[本地图](./local.png)
+
+mailto：[邮箱](mailto:demo@example.com)
+
+行内 code：\`https://example.com/not-a-link.png\`
+`
+  },
+
   think: {
     label: 'Think / 自定义',
     markdown: `# Think 与自定义标签（remarkThink + MergeThinkRemark）
@@ -295,6 +362,7 @@ const DEMO_TAB_ORDER: DemoTabId[] = [
   'mermaid',
   'mermaidRoundTrip',
   'table',
+  'httpResource',
   'think',
   'form'
 ];
@@ -310,10 +378,62 @@ export const DEMO_MARKDOWN: Record<DemoTabId, string> = DEMO_TAB_ORDER.reduce(
   {} as Record<DemoTabId, string>
 );
 
+/** Tab 扩展元数据：分类与说明 */
+const DEMO_TAB_EXTRA: Record<
+  DemoTabId,
+  Pick<DemoTabMeta, 'category' | 'description'>
+> = {
+  overview: {
+    category: 'basic',
+    description: '各能力 Tab 索引与组合说明'
+  },
+  gfm: {
+    category: 'basic',
+    description: 'remark-gfm / remark-breaks 排版与 GFM 语法'
+  },
+  math: {
+    category: 'basic',
+    description: 'remark-math + rehype-katex 行内与块级公式'
+  },
+  code: {
+    category: 'basic',
+    description: 'CodeHighLight 多语言高亮与代码块 UI'
+  },
+  diagrams: {
+    category: 'diagram',
+    description: '复杂 flowchart / sequence 等 Mermaid 样例'
+  },
+  mermaid: {
+    category: 'diagram',
+    description: 'rehypeMermaid 双引擎、meta 覆盖与卡片 PNG 导出'
+  },
+  mermaidRoundTrip: {
+    category: 'diagram',
+    description: 'jsonToMermaid / mermaidToJson 互转能力'
+  },
+  table: {
+    category: 'extend',
+    description: 'tableNodeParse 解析 GFM 表格为结构化数据'
+  },
+  httpResource: {
+    category: 'extend',
+    description: 'remarkHttpResource 打标；图片含加载成功 / 失败样例'
+  },
+  think: {
+    category: 'extend',
+    description: 'remarkThink 自定义标签与 thinkGroup 合并'
+  },
+  form: {
+    category: 'extend',
+    description: ':::form 指令块与 JSON 表单模板'
+  }
+};
+
 /**
  * Tab 列表（顺序即界面展示顺序）
  */
 export const demoTabList: DemoTabMeta[] = DEMO_TAB_ORDER.map((id) => ({
   id,
-  label: DEMO_TAB_CONFIG[id].label
+  label: DEMO_TAB_CONFIG[id].label,
+  ...DEMO_TAB_EXTRA[id]
 }));

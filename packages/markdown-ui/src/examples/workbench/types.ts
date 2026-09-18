@@ -29,6 +29,8 @@ export type TabContentLoader = (
 export interface WorkbenchProps {
   tabs: WorkbenchTab[];
   loadTabContent: TabContentLoader;
+  /** 透传到预览 MarkdownRenderer，可覆盖 `a` / `img` 等标签映射 */
+  rendererComponents?: Record<string, unknown>;
 }
 
 /**

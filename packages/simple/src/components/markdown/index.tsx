@@ -1,8 +1,14 @@
+/**
+ * 独立 VueMarkdown 封装（按需演示用）。
+ * 已有自定义 a/img 时用 `withHttpResourceMark(原组件)` 包一层，不要覆盖原映射。
+ * Markdown 编辑页走 MarkdownWorkbench；同一写法通过 `rendererComponents` 注入预览。
+ */
 import { defineComponent } from 'vue';
 import {
   tableNodeParse,
   rehypeMermaid,
-  MergeThinkRemark
+  MergeThinkRemark,
+  remarkHttpResource
 } from '@nnnb/markdown';
 import { VueMarkdown } from '@nnnb/markdown/vue-ui';
 import {
@@ -17,6 +23,11 @@ import 'katex/dist/katex.min.css';
 import { ElTable, ElTableColumn } from 'element-plus';
 import '@nnnb/markdown/markdown/markdown.module.scss';
 import '@nnnb/markdown';
+import {
+  DemoBusinessImage,
+  DemoBusinessLink,
+  withHttpResourceMark
+} from './HttpResourceLink';
 export default defineComponent({
   name: 'VueMarkdown',
   props: {
@@ -34,7 +45,8 @@ export default defineComponent({
           remarkPlugins={[
             MergeThinkRemark,
             RemarkBreaks,
-            [RemarkGfm, { singleTilde: false }]
+            [RemarkGfm, { singleTilde: false }],
+            [remarkHttpResource, { promoteBareUrls: true }]
           ]}
           math={{
             strict: false,
@@ -58,7 +70,13 @@ export default defineComponent({
                 </ElTable>
               );
             },
-            code: CodeBlock
+            code: CodeBlock,
+            /**
+             * 已有自定义 a/img 时用 withHttpResourceMark 包一层。
+             * `components.a` 只能有一个实现，不能同时写两个 a。
+             */
+            // a: withHttpResourceMark(DemoBusinessLink),
+            img: withHttpResourceMark(DemoBusinessImage)
           }}
           rehypePlugins={[
             [

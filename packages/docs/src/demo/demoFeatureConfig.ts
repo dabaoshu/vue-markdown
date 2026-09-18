@@ -18,6 +18,7 @@ export interface DemoFeatureToggleMeta {
 /** 全部特性开关定义（顺序即 UI 展示顺序） */
 export const DEMO_FEATURE_TOGGLES: DemoFeatureToggleMeta[] = [
   { key: 'gfm', label: 'GFM', hint: 'remark-gfm：表格、任务列表等' },
+  { key: 'httpResource', label: 'HTTP 资源', hint: 'remarkHttpResource：按扩展名给 http(s) 链接打标' },
   { key: 'breaks', label: '换行保留', hint: 'remark-breaks' },
   { key: 'math', label: '数学公式', hint: 'remark-math + rehype-katex' },
   { key: 'mermaid', label: 'Mermaid', hint: 'rehypeMermaid 图表' },
@@ -36,7 +37,8 @@ export const ALL_FEATURES_ON: DemoMarkdownFeatures = {
   think: true,
   customTags: true,
   codeHighlight: true,
-  elTable: true
+  elTable: true,
+  httpResource: true
 };
 
 /**
@@ -52,7 +54,8 @@ const TAB_FEATURE_DEFAULTS: Record<DemoTabId, DemoMarkdownFeatures> = {
     think: false,
     customTags: false,
     codeHighlight: false,
-    elTable: false
+    elTable: false,
+    httpResource: false
   },
   math: {
     gfm: false,
@@ -62,7 +65,8 @@ const TAB_FEATURE_DEFAULTS: Record<DemoTabId, DemoMarkdownFeatures> = {
     think: false,
     customTags: false,
     codeHighlight: false,
-    elTable: false
+    elTable: false,
+    httpResource: false
   },
   code: {
     gfm: false,
@@ -72,7 +76,8 @@ const TAB_FEATURE_DEFAULTS: Record<DemoTabId, DemoMarkdownFeatures> = {
     think: false,
     customTags: false,
     codeHighlight: true,
-    elTable: false
+    elTable: false,
+    httpResource: false
   },
   diagrams: {
     gfm: true,
@@ -82,7 +87,8 @@ const TAB_FEATURE_DEFAULTS: Record<DemoTabId, DemoMarkdownFeatures> = {
     think: false,
     customTags: false,
     codeHighlight: false,
-    elTable: false
+    elTable: false,
+    httpResource: false
   },
   mermaid: {
     gfm: true,
@@ -92,7 +98,8 @@ const TAB_FEATURE_DEFAULTS: Record<DemoTabId, DemoMarkdownFeatures> = {
     think: false,
     customTags: false,
     codeHighlight: false,
-    elTable: false
+    elTable: false,
+    httpResource: false
   },
   mermaidRoundTrip: {
     gfm: false,
@@ -102,7 +109,8 @@ const TAB_FEATURE_DEFAULTS: Record<DemoTabId, DemoMarkdownFeatures> = {
     think: false,
     customTags: false,
     codeHighlight: false,
-    elTable: false
+    elTable: false,
+    httpResource: false
   },
   table: {
     gfm: true,
@@ -112,7 +120,19 @@ const TAB_FEATURE_DEFAULTS: Record<DemoTabId, DemoMarkdownFeatures> = {
     think: false,
     customTags: false,
     codeHighlight: false,
-    elTable: true
+    elTable: true,
+    httpResource: false
+  },
+  httpResource: {
+    gfm: true,
+    breaks: true,
+    math: false,
+    mermaid: false,
+    think: false,
+    customTags: false,
+    codeHighlight: false,
+    elTable: false,
+    httpResource: true
   },
   think: {
     gfm: false,
@@ -122,7 +142,8 @@ const TAB_FEATURE_DEFAULTS: Record<DemoTabId, DemoMarkdownFeatures> = {
     think: true,
     customTags: true,
     codeHighlight: false,
-    elTable: false
+    elTable: false,
+    httpResource: false
   },
   form: {
     gfm: true,
@@ -132,7 +153,8 @@ const TAB_FEATURE_DEFAULTS: Record<DemoTabId, DemoMarkdownFeatures> = {
     think: false,
     customTags: false,
     codeHighlight: false,
-    elTable: false
+    elTable: false,
+    httpResource: false
   }
 };
 

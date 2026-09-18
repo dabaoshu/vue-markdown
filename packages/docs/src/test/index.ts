@@ -6,3 +6,4 @@ export * as remarkGfmTest from './remark-gfm';
 export * as remarkMathTest from './remark-math';
 export * as codeHighlightTest from './code-highlight';
 export * as rehypeMermaidTest from './rehype-mermaid';
+export * as remarkHttpResourceTest from './remark-http-resource';

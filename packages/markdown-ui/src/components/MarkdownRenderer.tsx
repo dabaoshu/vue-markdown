@@ -3,7 +3,8 @@ import { CodeBlock } from './code/codeBlock';
 import {
   tableNodeParse,
   rehypeMermaid,
-  MergeThinkRemark
+  MergeThinkRemark,
+  remarkHttpResource
 } from '@nnnb/markdown';
 import { VueMarkdown } from '@nnnb/markdown/vue-ui';
 import ThinkElement, { thinkGroupElementt } from './think/thinkElement';
@@ -23,11 +24,14 @@ export interface MarkdownFeatures {
   codeHighlight: boolean;
   customTags: boolean;
   elTable: boolean;
+  httpResource: boolean;
 }
 
 export interface MarkdownRendererProps {
   source: string;
   features?: Partial<MarkdownFeatures>;
+  /** 覆盖或追加 VueMarkdown 标签映射，例如把 `a` 换成业务链接卡片 */
+  components?: Record<string, unknown>;
 }
 
 export const DEFAULT_MARKDOWN_FEATURES: MarkdownFeatures = {
@@ -38,7 +42,8 @@ export const DEFAULT_MARKDOWN_FEATURES: MarkdownFeatures = {
   think: true,
   codeHighlight: true,
   customTags: true,
-  elTable: true
+  elTable: true,
+  httpResource: true
 };
 
 /** Mermaid 卡片较重，按需异步加载 */
@@ -88,6 +93,9 @@ function buildMarkdownRenderOptions(features: MarkdownFeatures) {
   }
   if (features.gfm) {
     remarkPlugins.push([RemarkGfm, { singleTilde: false }]);
+  }
+  if (features.httpResource) {
+    remarkPlugins.push([remarkHttpResource, { promoteBareUrls: true }]);
   }
 
   const rehypePlugins: unknown[] = [];
@@ -189,6 +197,10 @@ export default defineComponent({
     features: {
       type: Object as PropType<Partial<MarkdownFeatures>>,
       default: () => ({})
+    },
+    components: {
+      type: Object as PropType<Record<string, unknown>>,
+      default: undefined
     }
   },
   setup(props) {
@@ -203,7 +215,7 @@ export default defineComponent({
           class={'markdown'}
           remarkPlugins={options.remarkPlugins}
           rehypePlugins={options.rehypePlugins}
-          components={options.components}
+          components={{ ...options.components, ...props.components }}
           customElements={options.customElements}
           math={options.math}
           source={props.source}
