@@ -144,7 +144,11 @@ export function withHttpResourceMark(
     inheritAttrs: false,
     setup(_, { attrs, slots }) {
       const openPreview = inject(SCENE_PREVIEW_KEY, null);
-      const imageFailed = ref(false);
+      /**
+       * 未收到内联图 onLoad 前视为失败。
+       * 避免 loading 期间点击 404 时以 failed:false 把死链写入灯箱 src。
+       */
+      const imageFailed = ref(true);
 
       /**
        * 已打标资源：阻止跳转并打开预览。

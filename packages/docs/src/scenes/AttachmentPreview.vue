@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { ElDialog, ElDrawer } from 'element-plus';
 import type { AttachmentPreviewModel } from './types';
 
@@ -20,6 +20,30 @@ const emit = defineEmits<{
 const imageModel = computed(() =>
   props.model?.mode === 'image' ? props.model : null
 );
+
+/**
+ * 灯箱 img 在打开后再次失败（例如内联图 onError 前点了 404）。
+ * 与 model.failed 一起决定切占位，避免死链留在 src。
+ */
+const lightboxImgBroken = ref(false);
+
+watch(
+  () => props.model,
+  () => {
+    lightboxImgBroken.value = false;
+  }
+);
+
+const imageShowsFailed = computed(
+  () => imageModel.value?.failed === true || lightboxImgBroken.value
+);
+
+/**
+ * 灯箱图片加载失败：卸掉 img，改用失败占位。
+ */
+function onLightboxImageError(): void {
+  lightboxImgBroken.value = true;
+}
 
 const fileModel = computed(() =>
   props.model?.mode === 'file' ? props.model : null
@@ -81,7 +105,7 @@ function fileKindLabel(model: Extract<AttachmentPreviewModel, { mode: 'file' }>)
     class="attachment-preview-dialog"
   >
     <div
-      v-if="imageModel?.failed"
+      v-if="imageShowsFailed && imageModel"
       class="attachment-preview__fail"
       role="img"
       :aria-label="`${imageModel.alt || '图片'}（加载失败）`"
@@ -93,6 +117,7 @@ function fileKindLabel(model: Extract<AttachmentPreviewModel, { mode: 'file' }>)
       class="attachment-preview__img"
       :src="imageModel.src"
       :alt="imageModel.alt"
+      @error="onLightboxImageError"
     />
   </ElDialog>
 
