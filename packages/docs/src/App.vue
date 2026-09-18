@@ -12,6 +12,9 @@
         <RouterLink to="/scenes" class="docs-nav-link" active-class="is-active">
           业务场景
         </RouterLink>
+        <RouterLink to="/changelog" class="docs-nav-link" active-class="is-active">
+          更新日志
+        </RouterLink>
         <RouterLink
           to="/test/remark-gfm"
           class="docs-nav-link"

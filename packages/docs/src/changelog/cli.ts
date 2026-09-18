@@ -40,4 +40,28 @@ passed =
     text.includes('更早版本') && text.includes('1.0.4')
   ) && passed;
 
+const appVuePath = resolve(docsPackageRoot, 'src/App.vue');
+const routerPath = resolve(docsPackageRoot, 'src/router/index.ts');
+const pagePath = resolve(docsPackageRoot, 'src/pages/Changelog.vue');
+
+const appVue = existsSync(appVuePath) ? readFileSync(appVuePath, 'utf8') : '';
+const routerSrc = existsSync(routerPath)
+  ? readFileSync(routerPath, 'utf8')
+  : '';
+const pageSrc = existsSync(pagePath) ? readFileSync(pagePath, 'utf8') : '';
+
+passed =
+  check(
+    'nav changelog link',
+    appVue.includes('to="/changelog"') && appVue.includes('更新日志')
+  ) && passed;
+passed =
+  check('router path', routerSrc.includes("path: '/changelog'")) && passed;
+passed =
+  check(
+    'page raw import',
+    pageSrc.includes('@repo/CHANGELOG.md?raw')
+  ) && passed;
+passed = check('mermaid off', pageSrc.includes('mermaid: false')) && passed;
+
 process.exit(passed ? 0 : 1);
