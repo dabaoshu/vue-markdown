@@ -12,6 +12,68 @@
   - `remarkHttpResource.ts`：remark 插件入口
   - `promoteBareUrls.ts`：`promoteBareUrls: true` 时的文本内 URL 提升
 
+## 架构图
+
+插件只负责分类与打标。UI 映射（`components.a` / `components.img`）在接入方完成，不进入本包。
+
+```mermaid
+flowchart LR
+  subgraph core ["core/ 纯函数"]
+    T["types.ts"]
+    E["extensions.ts"]
+    C["classifyHttpUrl.ts"]
+    T --> C
+    E --> C
+  end
+
+  subgraph engine ["engine/ AST"]
+    P["promoteBareUrls.ts"]
+    R["remarkHttpResource.ts"]
+    P --> R
+  end
+
+  C --> R
+  IDX["index.ts<br/>只导出引擎与类型"]
+  R --> IDX
+  C --> IDX
+  E --> IDX
+
+  R -->|"mdast data.httpResource<br/>hProperties data-http-*"| RH["remark-rehype"]
+  RH --> UI["接入方 UI · 不在本包<br/>components.a / img 包一层"]
+```
+
+运行时数据流（管线位置与分类决策）：
+
+```mermaid
+flowchart TD
+  MD["Markdown 源码"] --> Parse["remark-parse"]
+  Parse --> GFM["remark-gfm<br/>裸 URL → link"]
+  GFM --> Plugin["remarkHttpResource"]
+
+  Plugin --> Promote{"promoteBareUrls?"}
+  Promote -->|true| Bare["text 中的 http(s) 绝对地址<br/>提升为 link"]
+  Promote -->|false| Visit
+  Bare --> Visit["visit：type 为 link 或 image"]
+
+  Visit --> URL["node.url"]
+  URL --> Classify["classifyHttpUrl"]
+
+  Classify --> Proto{"http: / https:<br/>绝对地址?"}
+  Proto -->|否| Skip["返回 null，不改节点"]
+  Proto -->|是| Callback{"options.classify?"}
+  Callback -->|命中 kind| Hit["HttpResource"]
+  Callback -->|未命中 / 抛错回落| Table{"pathname 后缀<br/>在扩展名表中?"}
+  Table -->|是| Hit
+  Table -->|否或无后缀| Web["kind: webpage"]
+  Hit --> Write
+  Web --> Write["写入 node.data<br/>httpResource + hProperties"]
+
+  Write --> Rehype["remark-rehype"]
+  Skip --> Rehype
+  Rehype --> Hast["hast a / img<br/>带 data-http-kind / data-http-ext"]
+  Hast --> Map["接入方 components 映射<br/>已有自定义 a/img 时包一层"]
+```
+
 ## 默认导出边界
 
 `index.ts` 默认只导出引擎层能力与类型：
@@ -25,7 +87,7 @@
 
 ## 管线位置
 
-本插件应放在 **`remark-gfm` 之后**，以便 GFM 自动链接已先把裸 URL 转成 `link` 节点：
+本插件应放在 **`remark-gfm` 之后**，以便 GFM 自动链接已先把裸 URL 转成 `link` 节点（完整数据流见上方架构图）：
 
 ```text
 remark-gfm（自动链接）
