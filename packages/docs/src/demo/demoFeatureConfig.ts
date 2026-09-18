@@ -123,6 +123,17 @@ const TAB_FEATURE_DEFAULTS: Record<DemoTabId, DemoMarkdownFeatures> = {
     elTable: true,
     httpResource: false
   },
+  httpResource: {
+    gfm: true,
+    breaks: true,
+    math: false,
+    mermaid: false,
+    think: false,
+    customTags: false,
+    codeHighlight: false,
+    elTable: false,
+    httpResource: true
+  },
   think: {
     gfm: false,
     breaks: true,

@@ -109,6 +109,17 @@ components={{ think: ThinkElement }}`
 const { columns, data } = tableNodeParse(node);`
   },
   {
+    id: 'httpResource',
+    demoTab: 'httpResource',
+    title: 'HTTP 资源分类',
+    description:
+      'remarkHttpResource 只给绝对 http(s) 的 link/image 打标（kind/ext），业务卡片由接入方按 data-http-kind 映射。',
+    tags: ['remarkHttpResource', 'classifyHttpUrl'],
+    snippet: `import { remarkHttpResource } from '@nnnb/markdown';
+
+remarkPlugins={[[remarkHttpResource, { promoteBareUrls: true }]]}`
+  },
+  {
     id: 'overview',
     demoTab: 'overview',
     title: '引擎 / UI 分层',
@@ -157,7 +168,7 @@ function canOpenDemo(feature: FeatureCard): feature is FeatureCard & { demoTab: 
       <p class="hero-badge">Vue 3 · TypeScript · Unified</p>
       <h1 class="hero-title">@nnnb/markdown</h1>
       <p class="hero-desc">
-        可扩展的 Markdown 渲染组件库：GFM、数学公式、代码高亮、Mermaid 图表、自定义标签，引擎与 UI 分层设计，按需引入。
+        可扩展的 Markdown 渲染组件库：GFM、数学公式、代码高亮、Mermaid 图表、HTTP 资源分类、自定义标签，引擎与 UI 分层设计，按需引入。
       </p>
       <div class="hero-actions">
         <RouterLink
