@@ -12,7 +12,8 @@
     "test:remark-math": "esno src/test/remark-math/cli.ts",
     "test:code-highlight": "esno src/test/code-highlight/cli.ts",
     "test:rehype-mermaid": "esno src/test/rehype-mermaid/cli.ts",
-    "test:remark-http-resource": "esno src/test/remark-http-resource/cli.ts"
+    "test:remark-http-resource": "esno src/test/remark-http-resource/cli.ts",
+    "test:scenes": "esno src/scenes/cli.ts"
   },
   "dependencies": {
     "@codemirror/commands": "^6.8.1",
