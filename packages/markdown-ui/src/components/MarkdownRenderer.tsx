@@ -30,6 +30,8 @@ export interface MarkdownFeatures {
 export interface MarkdownRendererProps {
   source: string;
   features?: Partial<MarkdownFeatures>;
+  /** 覆盖或追加 VueMarkdown 标签映射，例如把 `a` 换成业务链接卡片 */
+  components?: Record<string, unknown>;
 }
 
 export const DEFAULT_MARKDOWN_FEATURES: MarkdownFeatures = {
@@ -195,6 +197,10 @@ export default defineComponent({
     features: {
       type: Object as PropType<Partial<MarkdownFeatures>>,
       default: () => ({})
+    },
+    components: {
+      type: Object as PropType<Record<string, unknown>>,
+      default: undefined
     }
   },
   setup(props) {
@@ -209,7 +215,7 @@ export default defineComponent({
           class={'markdown'}
           remarkPlugins={options.remarkPlugins}
           rehypePlugins={options.rehypePlugins}
-          components={options.components}
+          components={{ ...options.components, ...props.components }}
           customElements={options.customElements}
           math={options.math}
           source={props.source}

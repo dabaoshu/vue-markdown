@@ -147,7 +147,11 @@
                 ref="previewTarget"
                 class="preview-content"
               >
-                <MarkdownRenderer :source="previewCode" :features="features" />
+                <MarkdownRenderer
+                  :source="previewCode"
+                  :features="features"
+                  :components="rendererComponents"
+                />
               </div>
             </div>
           </section>
