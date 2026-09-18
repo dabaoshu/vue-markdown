@@ -1,3 +1,4 @@
+import { pickCannedReply } from './cannedReplies';
 import { canSendFollowUp } from './resolveSceneId';
 import { DEFAULT_SCENE_ID, MAX_FOLLOW_UPS } from './constants';
 import { resolveSceneId } from './resolveSceneId';
@@ -39,6 +40,21 @@ passed =
   passed;
 passed =
   check('assistant has think tag', getScene('assistant').markdown.includes('<think>') === true) &&
+  passed;
+passed =
+  check('mfa keyword', pickCannedReply('assistant', '我换手机了').includes('重置')) &&
+  passed;
+passed =
+  check('outage keyword', pickCannedReply('assistant', '订单超时了').includes('checkout-api')) &&
+  passed;
+passed =
+  check(
+    'fallback',
+    pickCannedReply('assistant', '你好').includes('后四位') ||
+      pickCannedReply('assistant', '你好').includes('工单号')
+  ) && passed;
+passed =
+  check('reasoning still think', pickCannedReply('reasoning', '为什么').includes('<think>')) &&
   passed;
 
 process.exit(passed ? 0 : 1);
