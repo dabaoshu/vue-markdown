@@ -17,23 +17,40 @@
         v-for="group in groupedTabs"
         :key="group.id"
         class="demo-sidebar__group"
+        :class="{ 'is-open': isGroupOpen(group.id) }"
       >
-        <h3 v-if="group.label" class="demo-sidebar__group-label">
-          {{ group.label }}
-        </h3>
         <button
-          v-for="tab in group.tabs"
-          :key="tab.id"
           type="button"
-          class="demo-sidebar__item"
-          :class="{ 'is-active': tab.id === activeTab }"
-          @click="$emit('select', tab.id)"
+          class="demo-sidebar__group-toggle"
+          :class="{ 'is-current': isGroupCurrent(group.id) }"
+          :aria-expanded="isGroupOpen(group.id)"
+          @click="toggleGroup(group.id)"
         >
-          <span class="demo-sidebar__item-label">{{ tab.label }}</span>
-          <span v-if="tab.description" class="demo-sidebar__item-desc">
-            {{ tab.description }}
+          <span class="demo-sidebar__group-label">{{ group.label }}</span>
+          <span class="demo-sidebar__group-count">{{ group.tabs.length }}</span>
+          <span
+            class="demo-sidebar__group-chevron"
+            :class="{ 'is-open': isGroupOpen(group.id) }"
+            aria-hidden="true"
+          >
+            ▾
           </span>
         </button>
+        <div v-show="isGroupOpen(group.id)" class="demo-sidebar__group-items">
+          <button
+            v-for="tab in group.tabs"
+            :key="tab.id"
+            type="button"
+            class="demo-sidebar__item"
+            :class="{ 'is-active': tab.id === activeTab }"
+            @click="$emit('select', tab.id)"
+          >
+            <span class="demo-sidebar__item-label">{{ tab.label }}</span>
+            <span v-if="tab.description" class="demo-sidebar__item-desc">
+              {{ tab.description }}
+            </span>
+          </button>
+        </div>
       </section>
     </nav>
 
@@ -54,38 +71,14 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { ref, toRef } from 'vue';
 import type { WorkbenchTab } from './types';
+import { useWorkbenchTabGroups } from './useWorkbenchTabGroups';
 
 const props = defineProps<{ tabs: WorkbenchTab[]; activeTab: string }>();
 defineEmits<{ select: [tabId: string] }>();
 
 const collapsed = ref(false);
-
-/** 常见分类 id 到线上侧栏文案的兜底映射 */
-const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
-  basic: '基础能力',
-  diagram: '图表',
-  extend: '扩展'
-};
-
-/**
- * 按 category 连续分组，保证侧栏结构与线上 Demo 一致。
- */
-const groupedTabs = computed(() => {
-  const groups: { id: string; label: string; tabs: WorkbenchTab[] }[] = [];
-  for (const tab of props.tabs) {
-    const id = tab.category ?? '_default';
-    const label =
-      tab.categoryLabel ||
-      (tab.category ? DEFAULT_CATEGORY_LABELS[tab.category] ?? tab.category : '');
-    const last = groups[groups.length - 1];
-    if (last && last.id === id) {
-      last.tabs.push(tab);
-    } else {
-      groups.push({ id, label, tabs: [tab] });
-    }
-  }
-  return groups;
-});
+const { groupedTabs, isGroupOpen, isGroupCurrent, toggleGroup } =
+  useWorkbenchTabGroups(toRef(props, 'tabs'), toRef(props, 'activeTab'));
 </script>

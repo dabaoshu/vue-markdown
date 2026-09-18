@@ -11,6 +11,14 @@ const panel = readFileSync(
   resolve(root, 'src/examples/workbench/WorkbenchFeaturePanel.vue'),
   'utf8'
 );
+const sidebar = readFileSync(
+  resolve(root, 'src/examples/workbench/WorkbenchSidebar.vue'),
+  'utf8'
+);
+const grouping = readFileSync(
+  resolve(root, 'src/examples/workbench/groupWorkbenchTabs.ts'),
+  'utf8'
+);
 const component = readFileSync(
   resolve(root, 'src/examples/workbench/MarkdownWorkbench.vue'),
   'utf8'
@@ -39,6 +47,9 @@ assert.match(component, /class="demo-workbench"/);
 assert.match(component, /v-show="!sampleOpen"/);
 assert.match(panel, /示例代码/);
 assert.match(panel, /buildVueMarkdownSnippet/);
+assert.match(grouping, /export function groupWorkbenchTabs/);
+assert.match(sidebar, /demo-sidebar__group-toggle/);
+assert.match(sidebar, /aria-expanded/);
 assert.doesNotMatch(component, /@\/|packages\/docs|packages\/simple/);
 
 console.log('markdown workbench contract: ok');
