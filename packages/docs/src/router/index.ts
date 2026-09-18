@@ -17,6 +17,11 @@ export const router = createRouter({
       component: () => import('@/pages/Demo.vue')
     },
     {
+      path: '/scenes',
+      name: 'Scenes',
+      component: () => import('@/pages/Scenes.vue')
+    },
+    {
       path: '/test/remark-think',
       name: 'RemarkThinkTest',
       component: () => import('@/pages/RemarkThinkTest.vue')

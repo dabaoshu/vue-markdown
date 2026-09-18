@@ -7,7 +7,10 @@
           特性
         </RouterLink>
         <RouterLink to="/demo" class="docs-nav-link" active-class="is-active">
-          在线 Demo
+          功能 Demo
+        </RouterLink>
+        <RouterLink to="/scenes" class="docs-nav-link" active-class="is-active">
+          业务场景
         </RouterLink>
         <RouterLink
           to="/test/remark-gfm"
@@ -90,6 +93,7 @@ const TEST_ROUTE_NAMES = new Set([
 const isWidePage = computed(
   () =>
     route.name === 'Demo' ||
+    route.name === 'Scenes' ||
     (typeof route.name === 'string' && TEST_ROUTE_NAMES.has(route.name))
 );
 </script>
