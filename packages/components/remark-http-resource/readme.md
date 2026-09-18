@@ -166,3 +166,31 @@ const plugins = [
 - 只处理 `http://` / `https://` 绝对地址；相对路径、`mailto:`、`www.` 无协议形式不在范围内。
 - 不发 HEAD/GET，不按 `Content-Type` 嗅探；仅依据 URL pathname 后缀与自定义回调分类。
 - `[封面](a.png)` 仍是 `link`（`kind: 'image'`）；`![alt](a.png)` 仍是 `image`。
+
+## 演示与验收
+
+文档站与 simple 只消费引擎标记，不把业务卡片放进本包。
+
+| 入口 | 说明 |
+| --- | --- |
+| 文档站 Demo | `/demo?tab=httpResource`：原生 `a` / `img`，可在开发者工具查看 `data-http-kind` |
+| AST + UI 测试页 | `/test/remark-http-resource` |
+| CLI | `pnpm --filter @nnnb/docs test:remark-http-resource`（classifyHttpUrl + AST） |
+| simple | `packages/simple` 的 `HttpResourceLink`：已有自定义 `a` / `img` 时包一层，按 `kind=image` 走图片组件 |
+
+工作台左侧「示例分类」为二级展开（基础能力 / 图表 / 扩展），HTTP 资源在「扩展」下。
+
+已有自定义 `a` / `img` 时不要整表替换，按 hast 标签各映射一次并包一层，避免丢掉 `data-http-*`：
+
+```tsx
+function withHttpResourceMark(Inner: Component) {
+  return (props: Record<string, unknown>) => (
+    <Inner {...props} data-http-kind={props['data-http-kind']} />
+  );
+}
+
+components={{
+  a: withHttpResourceMark(ExistingLink),
+  img: withHttpResourceMark(ExistingImage)
+}}
+```

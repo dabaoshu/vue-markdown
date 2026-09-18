@@ -75,7 +75,14 @@ import 'katex/dist/katex.min.css';
 如果你只需要插件或引擎函数：
 
 ```ts
-import { rehypeMermaid, highlightTohtml, refractorToHtml, downloadSvgAsPng } from '@nnnb/markdown';
+import {
+  rehypeMermaid,
+  remarkHttpResource,
+  classifyHttpUrl,
+  highlightTohtml,
+  refractorToHtml,
+  downloadSvgAsPng
+} from '@nnnb/markdown';
 ```
 
 ## 体积优化建议

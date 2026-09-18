@@ -20,7 +20,7 @@
 | remark-math | `remark-math/` | `/test/remark-math` | `pnpm --filter @nnnb/docs test:remark-math` |
 | code-highlight | `code-highlight/` | `/test/code-highlight` | `pnpm --filter @nnnb/docs test:code-highlight` |
 | rehype-mermaid | `rehype-mermaid/` | `/test/rehype-mermaid` | `pnpm --filter @nnnb/docs test:rehype-mermaid` |
-| remark-http-resource | `remark-http-resource/` | `/test/remark-http-resource` | `pnpm --filter @nnnb/docs test:remark-http-resource` |
+| remark-http-resource | `remark-http-resource/` | `/test/remark-http-resource` | `pnpm --filter @nnnb/docs test:remark-http-resource`（含 classifyHttpUrl） |
 
 ## 目录模板
 

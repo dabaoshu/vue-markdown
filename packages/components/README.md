@@ -9,6 +9,7 @@ Vue 3 Markdown 渲染能力集合，按「引擎层 / UI 层」分离组织，�
 - 数学公式（`remark-math` + `rehype-katex`，内置 LaTeX `\[...\]` / `\(...\)` 预处理）
 - Mermaid 图表（`mermaid` / `beautiful-mermaid` 双引擎，SVG / ASCII 输出，流式渲染、加载态/错误态遮罩、代码块 meta 覆盖）
 - 自定义标签（`remark-think`，支持 `<think>` 等块级自定义标签）
+- HTTP 资源分类（`remarkHttpResource`，按 pathname 后缀给 `http(s)` 的 `link` / `image` 打标，不绑定业务 UI）
 - 引擎工具（表格解析、代码块替换为组件、渲染时序控制、JSON→Mermaid、SVG 导出 PNG 等）
 
 ## 安装
@@ -38,7 +39,7 @@ pnpm add rehype-katex remark-math
 
 ```ts
 // 引擎层：插件、纯函数、类型
-import { rehypeMermaid, remarkThink, highlightTohtml, refractorToHtml } from '@nnnb/markdown';
+import { rehypeMermaid, remarkThink, remarkHttpResource, highlightTohtml, refractorToHtml } from '@nnnb/markdown';
 // UI 层：Vue 组件
 import { VueMarkdown, CodeHighLight, MermaidBlock, codeLight } from '@nnnb/markdown/vue-ui';
 ```
@@ -140,7 +141,23 @@ const md = '```mermaid\nflowchart LR\n  A --> B\n```';
 </template>
 ```
 
-### 5. 自定义标签（think）
+### 5. HTTP 资源分类
+
+`remarkHttpResource` 只给绝对 `http://` / `https://` 的 `link` / `image` 写入 `data-http-kind` / `data-http-ext`，**不改节点 type、不发请求、不带业务卡片**。业务侧用 `components.a` / `components.img` 按标记包一层即可。
+
+```ts
+import { remarkHttpResource } from '@nnnb/markdown';
+
+remarkPlugins={[
+  [remarkHttpResource, { promoteBareUrls: true }]
+]}
+```
+
+- 插件说明：[remark-http-resource/readme.md](./remark-http-resource/readme.md)
+- 文档站 Demo：`/demo?tab=httpResource`
+- AST + UI 验收：`/test/remark-http-resource`，CLI `pnpm --filter @nnnb/docs test:remark-http-resource`
+
+### 6. 自定义标签（think）
 
 通过 `customElements` 声明块级自定义标签，内部自动接入 `remark-think`：
 
@@ -212,6 +229,7 @@ const md = '<think>\n正在思考...\n</think>';
 | 模块 | 主要导出 | 说明 |
 | --- | --- | --- |
 | `markdown` | `CreateVMarkdown`, `MarkdownOptions`, `defaultUrlTransform`, `preprocessLaTeX`, `preprocessMath`, `processThink` | 核心 markdown→JSX 渲染、数学公式与 think 预处理 |
+| `remark-http-resource` | `remarkHttpResource`, `classifyHttpUrl`, `DEFAULT_HTTP_RESOURCE_EXTENSIONS` | 给 http(s) 链接/图片打 kind/ext 标记 |
 | `remark-think` | `remarkThink`, `thinkSyntax`, `ThinkFlowOption` | 自定义块级标签解析 |
 | `codeHighLight` | `highlightTohtml`, `refractorToHtml`, `getCodeClassName` | 代码高亮纯函数 |
 | `remark-mermaid` | `rehypeMermaid`, `jsonToMermaid`, `extractExternalResourceRefs`, `rasterizeSvgToCanvas`, `downloadSvgAsPng`, `copySvgAsPng` | Mermaid rehype 插件、JSON→DSL、SVG→PNG 导出（非 html2canvas） |
