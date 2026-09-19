@@ -30,6 +30,9 @@ passed =
   check('no Unreleased section', text.includes('## [Unreleased]') === false) &&
   passed;
 passed =
+  check('has 1.1.0 date', text.includes('## [1.1.0] - 2026-09-19')) &&
+  passed;
+passed =
   check('has 1.0.5 date', text.includes('## [1.0.5] - 2026-09-08')) &&
   passed;
 passed =
@@ -72,9 +75,18 @@ passed =
 
 const releases = parseChangelog(text);
 const unreleased = releases.find((item) => item.id === 'unreleased');
+const v110 = releases.find((item) => item.id === '1.1.0');
 const v105 = releases.find((item) => item.id === '1.0.5');
-passed = check('parse one release', releases.length === 1) && passed;
+passed = check('parse two releases', releases.length === 2) && passed;
 passed = check('skip unreleased', unreleased === undefined) && passed;
+passed =
+  check(
+    '1.1.0 added http resource',
+    v110?.date === '2026-09-19' &&
+      v110.items.filter((item) => item.kind === 'added').length === 2 &&
+      v110.items.some((item) => item.text.includes('remarkHttpResource')) &&
+      v110.items.some((item) => item.text.includes('promoteBareUrls'))
+  ) && passed;
 passed =
   check(
     '1.0.5 date and kinds',

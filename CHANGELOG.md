@@ -2,6 +2,13 @@
 
 本文件记录已发布的 `@nnnb/markdown` 具体版本。文档站（`packages/docs`）与 playground（`packages/simple`）的改动不记在这里。1.0.4 及更早版本未公开完整日志。
 
+## [1.1.0] - 2026-09-19
+
+### Added
+
+- 新增 `remarkHttpResource`：给绝对 `http(s)` 的 link / image 写入 kind、ext 标记，不改节点类型、不发请求。
+- 可选 `promoteBareUrls`：把正文里的裸 `http(s)` URL 提升为 link 再打标。
+
 ## [1.0.5] - 2026-09-08
 
 ### Changed
