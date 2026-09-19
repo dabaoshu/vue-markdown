@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseChangelog, splitInlineCode } from './parseChangelog';
 
 /**
  * @param name 用例名
@@ -25,7 +26,9 @@ const text = existsSync(changelogPath)
   : '';
 
 passed = check('file non-empty', text.trim().length > 0) && passed;
-passed = check('has Unreleased', text.includes('## [Unreleased]')) && passed;
+passed =
+  check('no Unreleased section', text.includes('## [Unreleased]') === false) &&
+  passed;
 passed =
   check('has 1.0.5 date', text.includes('## [1.0.5] - 2026-09-08')) &&
   passed;
@@ -37,7 +40,7 @@ passed =
 passed =
   check(
     'earlier versions note',
-    text.includes('更早版本') && text.includes('1.0.4')
+    text.includes('1.0.4') && text.includes('未公开完整日志')
   ) && passed;
 
 const appVuePath = resolve(docsPackageRoot, 'src/App.vue');
@@ -62,6 +65,35 @@ passed =
     'page raw import',
     pageSrc.includes('@repo/CHANGELOG.md?raw')
   ) && passed;
-passed = check('mermaid off', pageSrc.includes('mermaid: false')) && passed;
+passed =
+  check('page uses parser', pageSrc.includes('parseChangelog')) && passed;
+passed =
+  check('page has version toc', pageSrc.includes('changelog-toc')) && passed;
+
+const releases = parseChangelog(text);
+const unreleased = releases.find((item) => item.id === 'unreleased');
+const v105 = releases.find((item) => item.id === '1.0.5');
+passed = check('parse one release', releases.length === 1) && passed;
+passed = check('skip unreleased', unreleased === undefined) && passed;
+passed =
+  check(
+    '1.0.5 date and kinds',
+    v105?.date === '2026-09-08' &&
+      v105.items.some((item) => item.kind === 'changed') &&
+      v105.items.some((item) => item.kind === 'added')
+  ) && passed;
+passed =
+  check(
+    'inline code split',
+    splitInlineCode('对齐 `v1.0.4` 入口')[1]?.value === 'v1.0.4'
+  ) && passed;
+
+passed =
+  check(
+    'parser skips Unreleased heading',
+    parseChangelog(
+      '## [Unreleased]\n\n暂无\n\n## [1.0.5] - 2026-09-08\n\n### Added\n\n- x\n'
+    ).every((item) => item.id !== 'unreleased')
+  ) && passed;
 
 process.exit(passed ? 0 : 1);
