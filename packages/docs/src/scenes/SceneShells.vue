@@ -17,7 +17,7 @@ const props = defineProps<{
   turns?: ChatTurn[];
   /** 底部输入草稿 */
   draft?: string;
-  /** 正在等待预制回复 */
+  /** 正在流式写出助手回复 */
   sending?: boolean;
   /** 已达追问上限 */
   ended?: boolean;
@@ -140,7 +140,7 @@ function onComposerKeydown(event: KeyboardEvent): void {
         :disabled="composerDisabled"
         @click="emit('send')"
       >
-        发送
+        {{ sending ? '回复中' : '发送' }}
       </button>
     </div>
   </div>

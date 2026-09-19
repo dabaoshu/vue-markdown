@@ -1,16 +1,19 @@
 <script lang="ts" setup>
-import { computed, provide, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, provide, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { MarkdownRenderer } from '@nnnb/markdown-ui';
 import AttachmentPreview from './AttachmentPreview.vue';
 import IntakeForm from './IntakeForm.vue';
 import SceneShells from './SceneShells.vue';
 import { pickCannedReply } from './cannedReplies';
-import { FOLLOW_UP_DELAY_MS } from './constants';
 import { SCENE_PREVIEW_KEY, sceneHttpComponents } from './HttpResourceMark';
 import { createEmptyIntakeForm } from './intakeValidation';
 import { canSendFollowUp } from './resolveSceneId';
 import { getScene } from './sceneData';
+import {
+  createSceneMarkdownStream,
+  type SceneMarkdownStream
+} from './streamMarkdown';
 import type {
   AttachmentPreviewModel,
   ChatTurn,
@@ -20,7 +23,7 @@ import type {
 
 /**
  * 业务场景阅读器：按壳组合 Markdown、对话、报障表与附件预览。
- * 禁止接入 MarkdownWorkbench；追问延迟只用 setTimeout。
+ * 禁止接入 MarkdownWorkbench；助手回复用本目录流式控制器逐块写出。
  */
 const props = defineProps<{
   /** 当前场景 id，由页面层 resolveSceneId 后传入 */
@@ -36,14 +39,63 @@ const intakeForm = ref<IntakeFormValue>(createEmptyIntakeForm());
 const submitted = ref<IntakeFormValue | null>(null);
 const preview = ref<AttachmentPreviewModel | null>(null);
 
-/** 切场景时递增，丢弃进行中的 setTimeout 回复 */
+/** 切场景时递增，丢弃进行中的流式回调 */
 let generation = 0;
+
+/** 当前对话气泡的流式控制器 */
+let stream: SceneMarkdownStream | null = null;
 
 const userTurnCount = computed(
   () => turns.value.filter((turn) => turn.role === 'user').length
 );
 
-const chatEnded = computed(() => !canSendFollowUp(userTurnCount.value));
+const chatEnded = computed(
+  () => !sending.value && !canSendFollowUp(userTurnCount.value)
+);
+
+/**
+ * 停掉进行中的流式输出。
+ */
+function stopStream(): void {
+  stream?.dispose();
+  stream = null;
+}
+
+/**
+ * 把 `fullText` 逐块写进指定助手气泡。
+ *
+ * @param fullText 完整 Markdown
+ * @param turnIndex `turns` 下标
+ * @param session 发起时的 generation，切场景后丢弃回调
+ */
+function startStream(
+  fullText: string,
+  turnIndex: number,
+  session: number
+): void {
+  stopStream();
+  sending.value = true;
+  stream = createSceneMarkdownStream(fullText, {
+    onChunk(partialText) {
+      if (session !== generation) {
+        return;
+      }
+      const current = turns.value[turnIndex];
+      if (!current) {
+        return;
+      }
+      turns.value[turnIndex] = { ...current, text: partialText };
+    },
+    onComplete() {
+      if (session !== generation) {
+        return;
+      }
+      sending.value = false;
+      stream = null;
+    }
+  });
+  stream.start();
+}
 
 /**
  * HTTP 卡片点击打开预览。
@@ -63,38 +115,39 @@ function closePreview(): void {
   preview.value = null;
 }
 
-/**
- * 固定时长等待；不用工作台流式控制器。
- *
- * @param ms 毫秒
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, ms);
-  });
-}
-
 watch(
   () => props.sceneId,
   (sceneId) => {
     generation += 1;
+    const session = generation;
+    stopStream();
     const next = getScene(sceneId);
-    turns.value = [
-      { id: 'seed', role: 'assistant', text: next.markdown }
-    ];
     draft.value = '';
-    sending.value = false;
     intakeForm.value = createEmptyIntakeForm();
     submitted.value = null;
     preview.value = null;
+
+    if (next.shell === 'assistant') {
+      turns.value = [{ id: 'seed', role: 'assistant', text: '' }];
+      startStream(next.markdown, 0, session);
+      return;
+    }
+
+    turns.value = [];
+    sending.value = false;
   },
   { immediate: true }
 );
 
+onBeforeUnmount(() => {
+  generation += 1;
+  stopStream();
+});
+
 /**
- * 发送一条用户追问，延迟后再追加预制助手回复。
+ * 发送一条用户追问，助手回复逐块流式写出。
  */
-async function sendFollowUp(): Promise<void> {
+function sendFollowUp(): void {
   const text = draft.value.trim();
   if (!text) {
     return;
@@ -113,25 +166,16 @@ async function sendFollowUp(): Promise<void> {
     text
   });
   draft.value = '';
-  sending.value = true;
-
-  try {
-    await sleep(FOLLOW_UP_DELAY_MS);
-    if (session !== generation) {
-      return;
-    }
-    turns.value.push({
-      id: `assistant-${userTurnCount.value}`,
-      role: 'assistant',
-      text: pickCannedReply(props.sceneId, text)
-    });
-  } catch (error) {
-    console.error('[scenes] 追问回复失败', error);
-  } finally {
-    if (session === generation) {
-      sending.value = false;
-    }
-  }
+  turns.value.push({
+    id: `assistant-${userTurnCount.value}`,
+    role: 'assistant',
+    text: ''
+  });
+  startStream(
+    pickCannedReply(props.sceneId, text),
+    turns.value.length - 1,
+    session
+  );
 }
 
 /**

@@ -1,11 +1,11 @@
 import { buildAttachmentPreview } from './attachmentPreviewModel';
 import { pickCannedReply } from './cannedReplies';
-import { canSendFollowUp } from './resolveSceneId';
 import { DEFAULT_SCENE_ID, MAX_FOLLOW_UPS } from './constants';
 import { createEmptyIntakeForm, validateIntakeForm } from './intakeValidation';
-import { resolveSceneId } from './resolveSceneId';
+import { canSendFollowUp, resolveSceneId } from './resolveSceneId';
 import { getScene, sceneList } from './sceneData';
 import { getSceneFeatures } from './sceneFeatures';
+import { takeStreamChunk } from './streamMarkdown';
 
 /**
  * @param name 用例名
@@ -98,5 +98,17 @@ passed =
       imageFailed: true
     })?.failed === true
   ) && passed;
+
+const streamed = 'abcdef';
+const first = takeStreamChunk(streamed, 0, 2);
+const second = takeStreamChunk(streamed, first.cursor, 3);
+const rest = takeStreamChunk(streamed, second.cursor, 99);
+passed = check('stream first chunk', first.text === 'ab' && first.cursor === 2) && passed;
+passed =
+  check('stream second chunk', second.text === 'abcde' && second.cursor === 5) &&
+  passed;
+passed =
+  check('stream drain', rest.text === streamed && rest.cursor === streamed.length) &&
+  passed;
 
 process.exit(passed ? 0 : 1);
