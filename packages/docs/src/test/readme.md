@@ -15,12 +15,14 @@
 
 | 插件 | 目录 | 页面 | CLI |
 | --- | --- | --- | --- |
-| remark-think | `remark-think/` | `/test/remark-think` | `pnpm --filter @nnnb/docs test:remark-think` |
-| remark-gfm | `remark-gfm/` | `/test/remark-gfm` | `pnpm --filter @nnnb/docs test:remark-gfm` |
-| remark-math | `remark-math/` | `/test/remark-math` | `pnpm --filter @nnnb/docs test:remark-math` |
-| code-highlight | `code-highlight/` | `/test/code-highlight` | `pnpm --filter @nnnb/docs test:code-highlight` |
-| rehype-mermaid | `rehype-mermaid/` | `/test/rehype-mermaid` | `pnpm --filter @nnnb/docs test:rehype-mermaid` |
-| remark-http-resource | `remark-http-resource/` | `/test/remark-http-resource` | `pnpm --filter @nnnb/docs test:remark-http-resource`（含 classifyHttpUrl） |
+| remark-gfm | `remark-gfm/` | `/test?tab=gfm` | `pnpm --filter @nnnb/docs test:remark-gfm` |
+| remark-math | `remark-math/` | `/test?tab=math` | `pnpm --filter @nnnb/docs test:remark-math` |
+| code-highlight | `code-highlight/` | `/test?tab=code` | `pnpm --filter @nnnb/docs test:code-highlight` |
+| rehype-mermaid | `rehype-mermaid/` | `/test?tab=mermaid` | `pnpm --filter @nnnb/docs test:rehype-mermaid` |
+| remark-http-resource | `remark-http-resource/` | `/test?tab=http` | `pnpm --filter @nnnb/docs test:remark-http-resource`（含 classifyHttpUrl） |
+| remark-think | `remark-think/` | `/test?tab=think` | `pnpm --filter @nnnb/docs test:remark-think` |
+
+顶栏只有一个「测试」入口，套件用页内 Tab 切换。旧地址 `/test/<plugin-id>` 会重定向到对应 `?tab=`。
 
 ## 目录模板
 
@@ -51,6 +53,6 @@ src/pages/<Plugin>Test.vue
 1. 建 `src/test/<id>/` 并按模板实现
 2. Preview **按用例配置**接线（不要复用 Demo 全开）
 3. 测试页：AST/UI 徽章 + 隐藏批跑 DOM 检测
-4. 注册路由 `/test/<id>` 与顶栏入口
+4. 注册 `/test?tab=<id>`（顶栏「测试」下的页内 Tab）；旧路径 `/test/<id>` 做重定向
 5. 增加 `package.json` script
 6. CLI 与测试页都验证通过后再交付

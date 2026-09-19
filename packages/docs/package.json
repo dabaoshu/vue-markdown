@@ -14,7 +14,8 @@
     "test:rehype-mermaid": "esno src/test/rehype-mermaid/cli.ts",
     "test:remark-http-resource": "esno src/test/remark-http-resource/cli.ts",
     "test:scenes": "esno src/scenes/cli.ts",
-    "test:changelog": "esno src/changelog/cli.ts"
+    "test:changelog": "esno src/changelog/cli.ts",
+    "test:tabs": "esno src/test/tabs.cli.ts"
   },
   "dependencies": {
     "@codemirror/commands": "^6.8.1",
