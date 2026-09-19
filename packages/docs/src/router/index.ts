@@ -22,6 +22,11 @@ export const router = createRouter({
       component: () => import('@/pages/Scenes.vue')
     },
     {
+      path: '/syntax',
+      name: 'Syntax',
+      component: () => import('@/pages/Syntax.vue')
+    },
+    {
       path: '/changelog',
       name: 'Changelog',
       component: () => import('@/pages/Changelog.vue')

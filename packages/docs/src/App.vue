@@ -9,6 +9,9 @@
         <RouterLink to="/demo" class="docs-nav-link" active-class="is-active">
           功能 Demo
         </RouterLink>
+        <RouterLink to="/syntax" class="docs-nav-link" active-class="is-active">
+          语法
+        </RouterLink>
         <RouterLink to="/scenes" class="docs-nav-link" active-class="is-active">
           业务场景
         </RouterLink>

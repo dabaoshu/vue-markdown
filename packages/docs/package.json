@@ -15,6 +15,7 @@
     "test:remark-http-resource": "esno src/test/remark-http-resource/cli.ts",
     "test:scenes": "esno src/scenes/cli.ts",
     "test:changelog": "esno src/changelog/cli.ts",
+    "test:syntax": "esno src/syntax/cli.ts",
     "test:tabs": "esno src/test/tabs.cli.ts"
   },
   "dependencies": {

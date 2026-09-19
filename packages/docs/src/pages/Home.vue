@@ -3,6 +3,10 @@ import { useRouter } from 'vue-router';
 import type { DemoTabId } from '@/demo/demoData';
 import { sceneList } from '@/scenes/sceneData';
 import type { SceneId } from '@/scenes/types';
+import {
+  SYNTAX_GROUPS,
+  type SyntaxExampleId
+} from '@/syntax/syntaxExamples';
 
 /**
  * 特性卡片定义
@@ -36,6 +40,9 @@ let demoPrefetchStarted = false;
 /** 是否已开始预加载业务场景相关 chunk */
 let scenesPrefetchStarted = false;
 
+/** 是否已开始预加载语法页 chunk */
+let syntaxPrefetchStarted = false;
+
 /**
  * 预加载 Demo 页与编辑器 chunk，降低从 Home 跳转时的白屏/卡顿
  */
@@ -55,6 +62,18 @@ function prefetchScenesBundle() {
   void import('@/pages/Scenes.vue');
   void import('@/scenes/SceneReader.vue');
 }
+
+/**
+ * 预加载语法速查页，只执行一次。
+ */
+function prefetchSyntaxBundle() {
+  if (syntaxPrefetchStarted) return;
+  syntaxPrefetchStarted = true;
+  void import('@/pages/Syntax.vue');
+}
+
+/** 首页语法入口：每组取第一条，方便跳到对照预览 */
+const syntaxHighlights = SYNTAX_GROUPS.map((group) => group.items[0]);
 
 /** 首页展示的主故事场景（不含短 clip） */
 const storyScenes = sceneList.filter((s) => s.group === 'story');
@@ -181,6 +200,16 @@ function openScene(id: SceneId) {
 }
 
 /**
+ * 跳转到语法速查并打开指定示例
+ *
+ * @param id 语法示例 id
+ */
+function openSyntax(id: SyntaxExampleId) {
+  prefetchSyntaxBundle();
+  router.push({ path: '/syntax', query: { id } });
+}
+
+/**
  * 特性卡片是否可跳转 Demo
  * @param feature 特性卡片
  */
@@ -214,6 +243,14 @@ function canOpenDemo(feature: FeatureCard): feature is FeatureCard & { demoTab: 
         >
           功能 Demo
         </RouterLink>
+        <RouterLink
+          to="/syntax"
+          class="btn btn--ghost"
+          @mouseenter="prefetchSyntaxBundle"
+          @focus="prefetchSyntaxBundle"
+        >
+          语法示例
+        </RouterLink>
         <a
           class="btn btn--ghost"
           href="https://github.com/dabaoshu/vue-markdown"
@@ -244,6 +281,38 @@ function canOpenDemo(feature: FeatureCard): feature is FeatureCard & { demoTab: 
           </button>
         </article>
       </div>
+    </section>
+
+    <section class="features">
+      <h2 class="section-title">Markdown 语法</h2>
+      <p class="roadmap-desc">
+        标题、列表、表格、公式、Mermaid、思考块等常用写法，源码与渲染对照。
+      </p>
+      <div class="feature-grid">
+        <article
+          v-for="item in syntaxHighlights"
+          :key="item.id"
+          class="feature-card"
+          @mouseenter="prefetchSyntaxBundle"
+        >
+          <h3 class="feature-card__title">{{ item.title }}</h3>
+          <p class="feature-card__desc">{{ item.hint }}</p>
+          <pre class="feature-card__code feature-card__code--clip"><code>{{ item.markdown }}</code></pre>
+          <button type="button" class="feature-card__link" @click="openSyntax(item.id)">
+            对照预览 →
+          </button>
+        </article>
+      </div>
+      <p class="syntax-more">
+        <RouterLink
+          to="/syntax"
+          class="feature-card__link"
+          @mouseenter="prefetchSyntaxBundle"
+          @focus="prefetchSyntaxBundle"
+        >
+          查看全部语法示例 →
+        </RouterLink>
+      </p>
     </section>
 
     <section class="features">
@@ -516,6 +585,11 @@ function canOpenDemo(feature: FeatureCard): feature is FeatureCard & { demoTab: 
   white-space: pre;
 }
 
+.feature-card__code--clip {
+  max-height: 120px;
+  overflow: auto;
+}
+
 .feature-card__link {
   align-self: flex-start;
   padding: 0;
@@ -529,6 +603,14 @@ function canOpenDemo(feature: FeatureCard): feature is FeatureCard & { demoTab: 
 
 .feature-card__link:hover {
   text-decoration: underline;
+}
+
+.syntax-more {
+  margin: 16px 0 0;
+}
+
+.syntax-more .feature-card__link {
+  text-decoration: none;
 }
 
 .arch-grid {
