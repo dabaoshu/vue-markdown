@@ -1,0 +1,64 @@
+---
+description: 程序化弹窗优先使用 createMessageModal（MessageDialog）
+globs: "**/*.{ts,tsx,vue}"
+alwaysApply: false
+---
+
+# createMessageModal 弹窗约定
+
+需要编程式打开确认或表单弹窗时，优先使用：
+
+```ts
+import {
+  createMessageModal,
+  isMessageModalCancelled,
+  MessageModalCancelledError
+} from '@/components/messageConfirm';
+```
+
+## 签名与返回值
+
+`createMessageModal(optionProps?, children?, footer?, header?)` 返回 `Promise`：
+
+- **确定且成功**：`resolve(values)`。`values` 来自默认插槽子组件的 `submit()` 返回值（无子表单时为 `undefined`）；随后自动卸载。
+- **取消**：`reject(new MessageModalCancelledError())`；可用 `isMessageModalCancelled(err)` 判断；随后自动卸载。
+- **确定时 `optionProps.onConfirm` 抛错**：`reject(error)`，弹窗保留便于重试；调用方需区分取消与业务错误。
+
+取消或其它 rejection 请 `try/catch` 或 `.catch`，避免未处理的 rejection。
+
+## optionProps（与 defaultProps 合并）
+
+| 字段 | 说明 |
+|------|------|
+| `type` / `tone` | 同一语义，`type` 优先；`tone` 为别名（如 `info` / `warning` / `success`） |
+| `width`, `height`, `title`, `content`, `tips`, `modalClass` | 布局与文案；无自定义 default 插槽时 body 使用 `content`（HTML）与 `tips` |
+| `showConfirm`, `showCancel`, `showIcon` | 按钮与标题区图标 |
+| `confirmBtnTxt`, `cancelBtnTxt` | 按钮文案 |
+| `icon` | 默认 `'icon-v2c-zhuyi'` |
+| `onConfirm` | 可选；resolve 前执行；带子组件时可能收到 `submit()` 的返回值 |
+| `onCancel` | 可选；在 reject 取消错误前执行 |
+
+## 插槽（TSX 第 2～4 参数）
+
+- **children**：自定义 default 插槽主体。若根组件实现 `submit()`，确定时会 `await submit()`，返回值作为 `values`。
+- **footer / header**：对应 `MessageDialog` 的 `footer`、`header` 插槽。
+
+## 示例
+
+简单文案：
+
+```ts
+await createMessageModal({
+  title: '提示',
+  content: '确定执行该操作？',
+  onConfirm: async () => {
+    /* 可选 */
+  },
+});
+```
+
+带子组件表单：`createMessageModal(props, () => <YourForm />)`，根组件需可被插槽 ref 读到并实现 `submit()`。
+
+## 勿混用
+
+其它目录若另有基于不同 `Dialog` 的封装，与 `createMessageModal`（`MessageDialog`）区分使用场景；程序化确认统一走 `createMessageModal`。
