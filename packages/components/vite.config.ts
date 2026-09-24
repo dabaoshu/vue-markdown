@@ -124,6 +124,50 @@ const copyScssSourcesPlugin = (): Plugin => ({
   }
 });
 
+/**
+ * Node 原生 ESM 不能解析不带扩展名的 lodash 子路径，例如 `lodash/debounce`。
+ * 只改写 ESM 产物中的 import 说明符；CJS 的 `require('lodash/debounce')` 保持不变。
+ */
+const rewriteLodashEsmImportsPlugin = (): Plugin => ({
+  name: 'rewrite-lodash-esm-imports',
+  apply: 'build',
+  renderChunk(code, _chunk, options) {
+    if (options.format !== 'es') {
+      return null;
+    }
+
+    const next = code.replace(
+      /from\s+(['"])lodash\/([^'"]+)\1/g,
+      (full, quote: string, subpath: string) => {
+        if (subpath.endsWith('.js')) {
+          return full;
+        }
+        return `from ${quote}lodash/${subpath}.js${quote}`;
+      }
+    );
+
+    return next === code ? null : next;
+  }
+});
+
+/**
+ * 包根 `package.json` 是 `"type": "module"`，Node 会把 `dist/lib/*.js` 当成 ESM。
+ * 在 CJS 目录补一份 `"type": "commonjs"`，让 `require` 入口按 CommonJS 执行。
+ */
+const markLibAsCommonJsPlugin = (): Plugin => ({
+  name: 'mark-lib-as-commonjs',
+  apply: 'build',
+  async closeBundle() {
+    const libDir = path.join(outDir, 'lib');
+    await fs.mkdir(libDir, { recursive: true });
+    await fs.writeFile(
+      path.join(libDir, 'package.json'),
+      `${JSON.stringify({ type: 'commonjs' }, null, 2)}\n`,
+      'utf8'
+    );
+  }
+});
+
 export default defineConfig({
   plugins: [
     vue(),
@@ -138,7 +182,9 @@ export default defineConfig({
       outputDir: path.join(outDir, './lib'),
       tsConfigFilePath: path.resolve(__dirname, './tsconfig.json')
     }),
-    copyScssSourcesPlugin()
+    copyScssSourcesPlugin(),
+    rewriteLodashEsmImportsPlugin(),
+    markLibAsCommonJsPlugin()
   ],
   build: {
     emptyOutDir: true,
