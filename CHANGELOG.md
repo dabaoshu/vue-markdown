@@ -2,6 +2,12 @@
 
 本文件记录已发布的 `@nnnb/markdown` 具体版本。文档站（`packages/docs`）与 playground（`packages/simple`）的改动不记在这里。1.0.4 及更早版本未公开完整日志。
 
+## [1.1.1] - 2026-09-24
+
+### Fixed
+
+- Node 加载 dist 入口不再失败：ESM 产物里的 lodash 子路径带上 `.js`，`dist/lib` 按 CommonJS 执行。
+
 ## [1.1.0] - 2026-09-19
 
 ### Added

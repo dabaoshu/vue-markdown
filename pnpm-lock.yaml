@@ -60,6 +60,9 @@ importers:
 
   packages/components:
     dependencies:
+      beautiful-mermaid:
+        specifier: ^1.1.3
+        version: 1.1.3
       devlop:
         specifier: ^1.1.0
         version: 1.1.0
@@ -72,6 +75,9 @@ importers:
       html-url-attributes:
         specifier: ^3.0.0
         version: 3.0.1
+      mermaid:
+        specifier: ^11.12.0
+        version: 11.14.0
       micromark-factory-space:
         specifier: ^2.0.1
         version: 2.0.1
@@ -93,9 +99,6 @@ importers:
       unist-util-visit:
         specifier: ^5.0.0
         version: 5.1.0
-      unist-util-visit-parents:
-        specifier: ^6.0.1
-        version: 6.0.1
       vfile:
         specifier: ^6.0.0
         version: 6.0.3
@@ -112,9 +115,6 @@ importers:
       '@vitejs/plugin-vue-jsx':
         specifier: ^4.0.0
         version: 4.2.0(vite@5.4.20(@types/node@20.19.43)(sass@1.97.3))(vue@3.5.40(typescript@5.9.2))
-      beautiful-mermaid:
-        specifier: ^1.1.3
-        version: 1.1.3
       cpy:
         specifier: ^11.1.0
         version: 11.1.0
@@ -136,9 +136,6 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.18.1
-      mermaid:
-        specifier: ^11.12.0
-        version: 11.14.0
       micromark-util-types:
         specifier: ^2.0.1
         version: 2.0.2
@@ -154,6 +151,9 @@ importers:
       sass:
         specifier: ^1.81.1
         version: 1.97.3
+      unist-util-visit-parents:
+        specifier: ^6.0.1
+        version: 6.0.1
       vite:
         specifier: ^5.4.14
         version: 5.4.20(@types/node@20.19.43)(sass@1.97.3)
@@ -163,6 +163,15 @@ importers:
       vue:
         specifier: ^3.4.0
         version: 3.5.40(typescript@5.9.2)
+
+  packages/directives:
+    dependencies:
+      devlop:
+        specifier: ^1.1.0
+        version: 1.1.0
+      element-plus:
+        specifier: ^2.9.5
+        version: 2.14.3(vue@3.5.40(typescript@5.9.2))
 
   packages/docs:
     dependencies:
