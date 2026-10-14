@@ -162,12 +162,7 @@ export function CreateVMarkdown(
   const processor = createProcessor(options);
   const file = createFile(options);
   const mdastTree = processor.parse(file);
-  processor.run(mdastTree, file).then((res) => {
-    console.log('mdastTree', res);
-  });
-
-  let hastTree = processor.runSync(mdastTree, file);
-  hastTree = postProcessHast(hastTree, options);
+  const hastTree = postProcessHast(processor.runSync(mdastTree, file), options);
 
   return toJsxRuntime(hastTree, {
     components,
