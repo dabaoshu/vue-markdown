@@ -62,7 +62,7 @@ function kindMeta(kind: ChangelogKind): { emoji: string; label: string } {
       <section class="changelog-page__cycle" aria-labelledby="changelog-cycle">
         <h2 id="changelog-cycle" class="changelog-page__cycle-title">发布说明</h2>
         <ul class="changelog-page__cycle-list">
-          <li>只记录已发布的具体版本号，不列出未发布内容。</li>
+          <li>待发布的改动标记为「未发布」，正式发布后归入具体版本号。</li>
           <li>修订号对应兼容修复，次版本对应向下兼容的新能力，主版本含破坏性更新。</li>
           <li>文档站与 playground 的改动不记在这里。</li>
         </ul>

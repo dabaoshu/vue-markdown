@@ -81,7 +81,7 @@ const unreleased = releases.find((item) => item.id === 'unreleased');
 const v111 = releases.find((item) => item.id === '1.1.1');
 const v110 = releases.find((item) => item.id === '1.1.0');
 const v105 = releases.find((item) => item.id === '1.0.5');
-passed = check('parse three releases', releases.length === 3) && passed;
+passed = check('解析历史版本与待发布改动', releases.length === 4) && passed;
 passed =
   check(
     '1.1.1 fixed dist load',
@@ -91,7 +91,10 @@ passed =
       ) &&
       v111.items.every((item) => item.kind === 'fixed')
   ) && passed;
-passed = check('skip unreleased', unreleased === undefined) && passed;
+passed = check('显示待发布的渲染卡死修复',
+  unreleased?.label === '未发布' && !unreleased.date &&
+  unreleased.items.some((item) => item.kind === 'fixed' && item.text.includes('渲染卡死'))
+) && passed;
 passed =
   check(
     '1.1.0 added http resource',

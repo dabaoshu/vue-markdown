@@ -4,6 +4,7 @@ const KIND_HEADING: Record<string, ChangelogKind> = {
   Added: 'added',
   Changed: 'changed',
   Fixed: 'fixed',
+  修复: 'fixed',
   Removed: 'removed'
 };
 
@@ -26,7 +27,7 @@ export function changelogAnchorId(label: string): string {
 }
 
 /**
- * 解析 Keep a Changelog 文本。只收带日期的具体版本，忽略 Unreleased 与「更早版本」。
+ * 解析带日期的具体版本与中文「未发布」章节。
  *
  * @param markdown 根目录 CHANGELOG.md 全文
  */
@@ -38,6 +39,12 @@ export function parseChangelog(markdown: string): ChangelogRelease[] {
 
   for (const raw of lines) {
     const line = raw.trimEnd();
+    if (line === '## 未发布') {
+      current = { id: 'unreleased', label: '未发布', date: null, items: [], note: null };
+      currentKind = null;
+      releases.push(current);
+      continue;
+    }
     const versionMatch = line.match(
       /^## \[([^\]]+)\](?:\s+-\s+(\d{4}-\d{2}-\d{2}))?\s*$/
     );
@@ -66,7 +73,7 @@ export function parseChangelog(markdown: string): ChangelogRelease[] {
       continue;
     }
 
-    const kindMatch = line.match(/^### (Added|Changed|Fixed|Removed)\s*$/);
+    const kindMatch = line.match(/^### (Added|Changed|Fixed|Removed|修复)\s*$/);
     if (kindMatch && current) {
       const mapped = KIND_HEADING[kindMatch[1]];
       currentKind = mapped ?? null;
