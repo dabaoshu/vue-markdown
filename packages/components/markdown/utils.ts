@@ -31,7 +31,8 @@ export const preprocessLaTeX = (content: string) => {
   codeBlocks.forEach((block) => {
     processedContent = processedContent.replace(
       'CODE_BLOCK_PLACEHOLDER',
-      block
+      // 回调返回值按字面插入，避免代码中的 $`、$'、$&、$$ 被当作替换指令。
+      () => block
     );
   });
 
