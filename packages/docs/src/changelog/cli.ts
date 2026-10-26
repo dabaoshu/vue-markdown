@@ -77,11 +77,11 @@ passed =
   check('page has version toc', pageSrc.includes('changelog-toc')) && passed;
 
 const releases = parseChangelog(text);
-const unreleased = releases.find((item) => item.id === 'unreleased');
+const v112 = releases.find((item) => item.id === '1.1.2');
 const v111 = releases.find((item) => item.id === '1.1.1');
 const v110 = releases.find((item) => item.id === '1.1.0');
 const v105 = releases.find((item) => item.id === '1.0.5');
-passed = check('解析历史版本与待发布改动', releases.length === 4) && passed;
+passed = check('解析四个已发布版本', releases.length === 4) && passed;
 passed =
   check(
     '1.1.1 fixed dist load',
@@ -91,9 +91,14 @@ passed =
       ) &&
       v111.items.every((item) => item.kind === 'fixed')
   ) && passed;
-passed = check('显示待发布的渲染卡死修复',
-  unreleased?.label === '未发布' && !unreleased.date &&
-  unreleased.items.some((item) => item.kind === 'fixed' && item.text.includes('渲染卡死'))
+passed = check('显示 1.1.2 的渲染卡死修复',
+  v112?.date === '2026-10-26' &&
+  v112.items.some((item) => item.kind === 'fixed' && item.text.includes('渲染卡死'))
+) && passed;
+const pending = parseChangelog('## 未发布\n\n### 修复\n\n- 待发布修复\n')[0];
+passed = check('保留未发布章节解析能力',
+  pending?.id === 'unreleased' && pending.date === null &&
+  pending.items[0]?.kind === 'fixed'
 ) && passed;
 passed =
   check(
