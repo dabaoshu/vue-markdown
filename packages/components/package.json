@@ -1,11 +1,13 @@
 {
   "name": "@nnnb/markdown",
-  "version": "1.1.2",
+  "version": "1.1.4",
   "type": "module",
   "scripts": {
     "build": "vite build",
     "build:style": "esno ./scripts/style",
     "prepublishOnly": "pnpm run build",
+    "prepack": "node ./scripts/package-json-publish.mjs prepare",
+    "postpack": "node ./scripts/package-json-publish.mjs restore",
     "publish:dry": "pnpm publish --dry-run --access public --no-git-checks",
     "release": "pnpm publish --access public --no-git-checks"
   },
